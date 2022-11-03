@@ -1,0 +1,27 @@
+  Regedt33 planned works + known bugs
+@[.]:9    # planned
+@[?]:2    # unsurely planned
+@[*]:4    # partially done
+@[+]:3    # done
+@[=]:0    # delayed
+
+[+] Implement "Copy to" and "Move to".
+[+] Implement "Find".
+[*] Make main menu and "About" dialog
+[+] Implement "Search & Replace".
+[.] Make SaveSettings.
+[.] Make undo log and undo.
+[*] Make "Favorites".
+[*] Make Regedit files' [*]import/ [.]export.
+[.] Implement loading of RegMon's dump.
+[*] Implement "drag and drop": [+]local/ [.]OLE.
+[.] Implement use of Regedit's help :)
+[?] Implement editing of resource lists, etc.
+[.] Printing
+[.] Different soring types for values listbox (including 'unsorted')
+[.] Special sorting for values listbox for selected keys
+
+Known bugs:
+[?] Root key names (HKLM, HKUS, etc.) are sometimes case-sensitive.
+[.] For newly-created values, values listbox is not updated when type is changed.
+[.] Refresh (F5) does not update values window

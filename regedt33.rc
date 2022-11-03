@@ -1,0 +1,690 @@
+#include "resource.h"
+#include "gen-versioninfo.h"
+
+#include <winres.h>
+
+#define STRINGIZE_NO_EXPANSION(x) #x
+#define STRINGIZE(x) STRINGIZE_NO_EXPANSION(x)
+#define TOKEN_PASTE_VERSION(v,a,b,c,d) v##a.b.c
+#define MAKE_VERSION_STRING(x) STRINGIZE(TOKEN_PASTE_VERSION(v,x))
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1251)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_TYPES               BITMAP  DISCARDABLE     "types.bmp"
+ARROWUP                 BITMAP  DISCARDABLE     "arrowup.bmp"
+ARROWDOWN               BITMAP  DISCARDABLE     "arrowdn.bmp"
+BMPKEYDRAG              BITMAP  DISCARDABLE     "key1.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+MAINMENU MENU DISCARDABLE 
+BEGIN
+    POPUP "&Registry"
+    BEGIN
+        MENUITEM "&Import Registry File ...",   IDM_IMPORTREGFILE
+        MENUITEM "&Export Registry File ...",   IDM_EXPORTREGFILE, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "&Connect Network Registry",   IDM_REGISTRY_CONNECT
+        MENUITEM "&Disconnect Network Registry", IDM_REGISTRY_DISCONNECT
+        , GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "&Load Hive",                  IDM_REGISTRY_LOADHIVE
+        MENUITEM "&Unload Hive",                IDM_REGISTRY_UNLOADHIVE
+        MENUITEM SEPARATOR
+        MENUITEM "&Settings",                   IDM_SETTINGS
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Undo ...",                   IDM_EDIT_UNDO, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "&Find\t^F",                   IDM_EDIT_FIND
+        MENUITEM "Find Ne&xt\tF3",              IDM_FINDNEXT
+        MENUITEM "Search + &Replace\t^H",       IDM_SEARCHREPLACE
+        MENUITEM SEPARATOR
+        MENUITEM "&Save key to file",           ID_EDIT_SAVEKEYTOFILE
+        MENUITEM "&Load key from file",         ID_EDIT_LOADKEYFROMFILE
+        MENUITEM "RegReplaceKey",               ID_EDIT_REPLACEKEY, GRAYED
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Refresh\tF5",                340
+    END
+    POPUP "&Favorites"
+    BEGIN
+        MENUITEM "Add &key",                    IDM_FAV_ADDKEY
+        MENUITEM "&Go to key...",               IDM_FAV_GOTO
+        MENUITEM "&Revise favorites",           IDM_FAV_EDIT
+        MENUITEM SEPARATOR
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About",                      IDM_ABOUT
+    END
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+REGEDIT                 ICON    DISCARDABLE     "icon1.ico"
+REGSMALL                ICON    DISCARDABLE     "icon2.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+EDSTRING DIALOG DISCARDABLE  0, 0, 303, 85
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Edit String"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,127,64,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,186,64,50,14
+    PUSHBUTTON      "Apply",IDC_APPLY,246,64,50,14,WS_DISABLED
+    LTEXT           "Value name:",IDC_STATIC,7,7,75,8
+    EDITTEXT        IDC_VNAME,7,17,289,12,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDITSTR,7,46,289,12,ES_AUTOHSCROLL
+    LTEXT           "Value data:",IDC_STATIC,7,34,92,8
+END
+
+EDMSTRING DIALOG DISCARDABLE  0, 0, 381, 177
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Edit Multistring"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,324,122,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,324,139,50,14
+    PUSHBUTTON      "Apply",IDC_APPLY,324,156,50,14,WS_DISABLED
+    LTEXT           "Value name:",IDC_STATIC,7,7,169,8
+    EDITTEXT        IDC_VNAME,7,17,367,12,ES_AUTOHSCROLL | ES_READONLY
+    LISTBOX         IDC_SLIST,7,66,310,104,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
+                    WS_TABSTOP
+    EDITTEXT        IDC_EDITSTR,7,47,367,12,ES_AUTOHSCROLL
+    LTEXT           "String x of x",IDC_VSLIST,7,35,132,8
+    PUSHBUTTON      "ARROWDOWN",IDC_MOVEDOWN,352,66,22,16,BS_BITMAP
+    PUSHBUTTON      "ARROWUP",IDC_MOVEUP,323,66,22,16,BS_BITMAP
+    PUSHBUTTON      "&New",IDC_NEW,324,86,22,14
+    PUSHBUTTON      "Del",IDC_DEL,352,86,22,14
+    PUSHBUTTON      "&Concatenate",IDC_CONCAT,324,104,50,14
+END
+
+TYPENO DIALOG DISCARDABLE  0, 0, 199, 61
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Enter custom value type"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,33,40,50,14,NOT WS_TABSTOP
+    PUSHBUTTON      "Cancel",IDCANCEL,114,40,50,14,NOT WS_TABSTOP
+    EDITTEXT        IDC_DECNUM,25,7,70,12,ES_AUTOHSCROLL
+    CTEXT           "0x0 () """"",IDC_TYPEID,7,22,185,16
+    EDITTEXT        IDC_HEXNUM,122,7,70,12,ES_AUTOHSCROLL
+    LTEXT           "Hex:",IDC_STATIC,100,7,14,13,SS_CENTERIMAGE
+    LTEXT           "Dec:",IDC_STATIC,7,7,16,13,SS_CENTERIMAGE
+END
+
+EDBINARY DIALOGEX 0, 0, 241, 146
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Edit Binary"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,68,127,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,126,127,50,14
+    LTEXT           "Value name:",IDC_STATIC,7,5,227,8
+    EDITTEXT        IDC_VNAME,7,17,227,12,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Value data:",IDC_STATIC,7,33,227,8
+    CONTROL         "",IDC_HEXEDIT,"MyHexEdit",WS_TABSTOP,7,46,227,73,
+                    WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Apply",IDC_APPLY,184,127,50,14,WS_DISABLED
+END
+
+EDDWORD DIALOG DISCARDABLE  0, 0, 186, 87
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Edit DWORD Value"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,66,50,14,NOT WS_TABSTOP
+    PUSHBUTTON      "Cancel",IDCANCEL,68,66,50,14,NOT WS_TABSTOP
+    EDITTEXT        IDC_HEXNUM,25,27,80,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_DECNUM,25,46,80,12,ES_AUTOHSCROLL
+    CTEXT           "0x0 ()",IDC_RESULTNUM,114,33,65,18
+    LTEXT           "Hex:",IDC_STATIC,7,27,14,13,SS_CENTERIMAGE
+    LTEXT           "Dec:",IDC_STATIC,7,46,16,13,SS_CENTERIMAGE
+    PUSHBUTTON      "Apply",IDC_APPLY,129,66,50,14,WS_DISABLED | NOT 
+                    WS_TABSTOP
+    EDITTEXT        IDC_VNAME,7,7,172,12,ES_AUTOHSCROLL | ES_READONLY
+END
+
+SEARCHREPLACE DIALOGEX 0, 0, 282, 122
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Search & Replace"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "&Search:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | 
+                    WS_GROUP,7,8,29,14
+    EDITTEXT        IDC_EDIT_SERACH,40,7,235,12,ES_AUTOHSCROLL
+    LTEXT           "&Replace:",IDC_STATIC_REPLACE,7,30,29,12
+    EDITTEXT        IDC_EDIT_REPLACE,40,29,235,12,ES_AUTOHSCROLL
+    CONTROL         "Ignore &case",IDC_CASE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,46,58,10
+    CONTROL         "&Don't replace",IDC_NOCHNG,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,59,61,10
+    LTEXT           "&Log file:",IDC_STATIC,76,48,27,12
+    EDITTEXT        IDC_EDIT_LOGFNAME,105,46,156,12,ES_AUTOHSCROLL,
+                    WS_EX_ACCEPTFILES
+    PUSHBUTTON      "&...",IDC_BUTTON_BROWSE,263,49,13,9
+    LTEXT           "S&tart key:",IDC_S_STARTKEY,73,65,34,12,SS_NOTIFY | 
+                    SS_CENTERIMAGE,WS_EX_STATICEDGE
+    EDITTEXT        IDC_STARTKEY,108,64,167,12,ES_AUTOHSCROLL
+    LTEXT           "&End key:",IDC_S_ENDKEY,73,79,33,12,SS_NOTIFY | 
+                    SS_CENTERIMAGE,WS_EX_STATICEDGE
+    EDITTEXT        IDC_ENDKEY,108,79,167,12,ES_AUTOHSCROLL
+    CONTROL         "In &value names",IDC_VALNAMES,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,79,64,10
+    CONTROL         "In value d&ata",IDC_VALDATA,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,92,57,10
+    PUSHBUTTON      "...",IDC_BUTTON_SELTYPE,65,92,13,9
+    CONTROL         "In &key names",IDC_KEYNAMES,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,105,58,10
+    CONTROL         "Search keys in alphabetical &order",IDC_ALPHORD,"Button",
+                    BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | 
+                    WS_TABSTOP,7,31,121,10
+    DEFPUSHBUTTON   "Go",IDOK,115,101,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,225,101,50,14
+    EDITTEXT        IDC_EDIT_STARTVAL,170,94,105,12,ES_AUTOHSCROLL | NOT 
+                    WS_VISIBLE
+    CONTROL         "+",IDC_C_SHOWSTARTVAL,"Button",BS_AUTOCHECKBOX | 
+                    BS_CENTER | BS_VCENTER | BS_PUSHLIKE | WS_TABSTOP,97,95,
+                    9,8
+    LTEXT           "Start after value:",IDC_S_STARTVAL,112,95,56,12,
+                    SS_NOTIFY | SS_CENTERIMAGE | NOT WS_VISIBLE,
+                    WS_EX_STATICEDGE
+    CONTROL         "+",IDC_C_SHOWSTRTYPE,"Button",BS_AUTOCHECKBOX | 
+                    BS_CENTER | BS_VCENTER | BS_PUSHLIKE | WS_TABSTOP,266,19,
+                    9,9
+    PUSHBUTTON      "binary",IDC_B_CALL_BE_SRCH,181,7,28,12,NOT WS_VISIBLE
+    PUSHBUTTON      "binary",IDC_B_CALL_BE_RPL,181,29,28,12,NOT WS_VISIBLE
+    CONTROL         "C escapes",IDC_C_CESC_SRCH,"Button",BS_AUTOCHECKBOX | 
+                    NOT WS_VISIBLE | WS_TABSTOP,226,9,49,10
+    CONTROL         "C escapes",IDC_C_CESC_RPL,"Button",BS_AUTOCHECKBOX | 
+                    NOT WS_VISIBLE | WS_TABSTOP,226,31,49,10
+END
+
+ABOUT DIALOG DISCARDABLE  0, 0, 185, 119
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Advanced Regedit"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,68,71,50,14
+    CTEXT           "© 2003-2022 by Alexander Melkov et al.",IDC_STATIC,32,16,137,9
+    CTEXT           "Distributed under GNU GPL",IDC_STATIC,38,30,106,10
+    EDITTEXT        110,13,55,158,12,ES_CENTER | ES_AUTOHSCROLL | 
+                    ES_NOHIDESEL | ES_READONLY | NOT WS_BORDER | NOT 
+                    WS_TABSTOP
+    ICON            "REGEDIT",IDC_STATIC,7,13,24,24,SS_CENTERIMAGE | 
+                    SS_REALSIZEIMAGE
+    LTEXT           MAKE_VERSION_STRING(GEN_VER_DIGITAL_VERSION),IDC_STATIC,7,39,24,12
+    CTEXT           "About:",IDC_STATIC,71,42,42,10
+    LTEXT           "One important note:\n- This is a beta release. There are bugs, and bug reports are highly desirable.",
+                    IDC_STATIC,3,88,180,42
+END
+
+REPLACEINPROGRESS DIALOG DISCARDABLE  0, 0, 155, 53
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+CAPTION "Replacing..."
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "HK...",IDC_KEYNAME,5,5,144,22,SS_SUNKEN | 
+                    SS_PATHELLIPSIS
+    DEFPUSHBUTTON   "&Stop",IDCANCEL,86,34,50,14
+    PUSHBUTTON      "&Pause",IDPAUSE,21,34,50,14
+END
+
+MOVEKEY DIALOG DISCARDABLE  0, 0, 186, 74
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Move key"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&To:",IDC_STATIC,7,34,19,12
+    EDITTEXT        IDC_KEYTO,30,33,149,12,ES_AUTOHSCROLL
+    CONTROL         "&Move",IDC_C_MOVE,"Button",BS_AUTOCHECKBOX | NOT 
+                    WS_VISIBLE | WS_TABSTOP,145,21,34,10
+    DEFPUSHBUTTON   "OK",IDOK,27,54,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,107,54,50,14
+    LTEXT           "&From:",IDC_STATIC,6,7,20,12
+    EDITTEXT        IDC_KEYFROM,30,6,149,12,ES_AUTOHSCROLL
+END
+
+ASKREPLACE DIALOG DISCARDABLE  0, 0, 281, 119
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Confirm replace"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Replace",IDOK,7,98,50,14
+    DEFPUSHBUTTON   "&Cancel",IDCANCEL,224,98,50,14
+    PUSHBUTTON      "&All",IDC_B_ALL,64,98,50,14
+    PUSHBUTTON      "&Skip",IDC_B_SKIP,167,98,50,14
+    EDITTEXT        IDC_KEYNAME,47,2,214,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "For key:",IDC_STATIC,19,2,25,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_OLDNAME,48,22,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Value name:",IDC_STATIC,7,22,39,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_NEWNAME,48,39,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "New name:",IDC_ST_NEWNAME,7,39,37,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_OLDDATA,48,57,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Value data:",IDC_STATIC,7,57,39,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_NEWDATA,48,73,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "New data:",IDC_ST_NEWDATA,7,73,34,12,SS_CENTERIMAGE
+    GROUPBOX        "",IDC_STATIC,4,51,275,38
+    GROUPBOX        "",IDC_STATIC,4,16,275,38
+END
+
+CONNREMOTE DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Connect Network Registry"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Computer name:",IDC_STATIC,7,9,59,8
+    EDITTEXT        IDC_E_COMP,6,24,115,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...",IDC_BROWSECOMP,129,41,50,14
+    DEFPUSHBUTTON   "OK",IDOK,129,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,24,50,14
+    CONTROL         "HKL&M",IDC_C_HKLM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    7,46,36,10
+    CONTROL         "HKC&R",IDC_C_HKCR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    7,62,36,10
+    CONTROL         "HK&US",IDC_C_HKUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    54,46,36,10
+    CONTROL         "HK&PD",IDC_C_HKPD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    54,68,36,10
+    CONTROL         "HK&DD",IDC_C_HKDD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    101,68,37,10
+END
+
+DISCONNREMOTE DIALOG DISCARDABLE  0, 0, 219, 95
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Disconnect Network Registry"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,162,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,162,24,50,14
+    LISTBOX         IDC_L_NAMES,7,7,147,81,LBS_USETABSTOPS | 
+                    LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | 
+                    WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Select &All",IDC_B_ALL,162,41,50,14
+END
+
+LOADHIVE DIALOGEX 0, 0, 206, 82
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Load Hive"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,45,61,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,109,61,50,14
+    LTEXT           "&Subkey to:",IDC_STATIC,7,9,35,8
+    EDITTEXT        IDC_E_SUBKEYNAME,88,7,111,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_E_KEYNAME,45,7,38,12,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "&File name:",IDC_STATIC,7,34,33,8
+    EDITTEXT        IDC_E_FILENAME,45,32,142,12,ES_AUTOHSCROLL,
+                    WS_EX_ACCEPTFILES
+    PUSHBUTTON      "&...",IDC_B_CHOOSE,188,31,11,14
+    LTEXT           "SE_RESTORE_NAME privilege required under NT.",
+                    IDC_SEWARN,7,49,163,8
+    PUSHBUTTON      "&Get it!",IDC_B_GETPRIV,173,46,26,14
+END
+
+LOADKEY DIALOGEX 0, 0, 206, 114
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Load Key"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,45,93,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,109,93,50,14
+    LTEXT           "Overwrite &Key:",IDC_STATIC,7,9,47,8
+    EDITTEXT        IDC_E_KEYNAME,59,7,140,12,ES_AUTOHSCROLL
+    LTEXT           "&File name:",IDC_STATIC,7,34,33,8
+    EDITTEXT        IDC_E_FILENAME,45,32,142,12,ES_AUTOHSCROLL,
+                    WS_EX_ACCEPTFILES
+    PUSHBUTTON      "&...",IDC_B_CHOOSE,188,31,11,14
+    CONTROL         "F&orce",IDC_CHK_FORCE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,21,65,34,10
+    CONTROL         "&No Lazy Flush",IDC_CHK_NOLAZY,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,21,78,61,10
+    CONTROL         "&Refresh",IDC_CHK_REFRESH,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,122,65,77,10
+    CONTROL         "&Whole hive Volatile",IDC_CHK_HIVEVOL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,122,78,77,10
+    LTEXT           "SE_RESTORE_NAME privilege required under NT.",
+                    IDC_SEWARN,7,49,163,8
+    PUSHBUTTON      "&Get it!",IDC_B_GETPRIV,173,46,26,14
+END
+
+SAVEKEY DIALOGEX 0, 0, 206, 84
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Save Key"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,45,63,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,109,63,50,14
+    LTEXT           "Save &Key:",IDC_STATIC,7,9,34,8
+    EDITTEXT        IDC_E_KEYNAME,45,7,154,12,ES_AUTOHSCROLL
+    LTEXT           "&File name:",IDC_STATIC,7,34,33,8
+    EDITTEXT        IDC_E_FILENAME,45,32,142,12,ES_AUTOHSCROLL,
+                    WS_EX_ACCEPTFILES
+    PUSHBUTTON      "&...",IDC_B_CHOOSE,188,31,11,14
+    LTEXT           "SE_BACKUP_NAME privilege required under NT.",IDC_SEWARN,
+                    7,49,157,8
+    PUSHBUTTON      "&Get it!",IDC_B_GETPRIV,173,46,26,14
+END
+
+REGREPLACEKEY DIALOGEX 0, 0, 206, 109
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "RegReplaceKey"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,45,88,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,109,88,50,14
+    LTEXT           "Save &Key:",IDC_STATIC,7,9,34,8
+    EDITTEXT        IDC_E_KEYNAME,45,7,154,12,ES_AUTOHSCROLL
+    LTEXT           "&New file name:",IDC_STATIC,7,34,48,8
+    EDITTEXT        IDC_E_FILENAME,57,32,130,12,ES_AUTOHSCROLL,
+                    WS_EX_ACCEPTFILES
+    PUSHBUTTON      "&...",IDC_B_CHOOSE,188,31,11,14
+    LTEXT           "SE_RESTORE_NAME privilege required under NT.",
+                    IDC_SEWARN,7,73,163,8
+    PUSHBUTTON      "&Get it!",IDC_B_GETPRIV,173,70,26,14
+    LTEXT           "&Old file name:",IDC_STATIC,7,53,44,8
+    EDITTEXT        IDC_E_FILENAME2,57,51,130,12,ES_AUTOHSCROLL,
+                    WS_EX_ACCEPTFILES
+    PUSHBUTTON      "&,..",IDC_B_CHOOSE2,188,50,11,14
+END
+
+ASKDSTVALEXISTS DIALOG DISCARDABLE  0, 0, 281, 101
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Destination value already exists!"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Replace",IDOK,7,80,50,14
+    DEFPUSHBUTTON   "&Cancel",IDCANCEL,224,80,50,14
+    PUSHBUTTON      "&All",IDC_B_ALL,64,80,50,14
+    PUSHBUTTON      "&Skip",IDC_B_SKIP,167,80,50,14
+    EDITTEXT        IDC_KEYNAME,47,2,214,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "For key:",-1,19,2,25,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_OLDNAME,48,22,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Value name:",-1,7,22,39,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_NEWNAME,48,39,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "New name:",IDC_ST_NEWNAME,7,39,37,12,SS_CENTERIMAGE
+    GROUPBOX        "",-1,4,14,275,42
+    EDITTEXT        IDC_NEWDATA,94,60,180,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Old data for ""New name"":",IDC_ST_NEWDATA,7,60,83,12,
+                    SS_CENTERIMAGE
+END
+
+ASKDSTKEYEXISTS DIALOG DISCARDABLE  0, 0, 281, 58
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Destination key already exists!"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Merge",IDOK,7,37,50,14
+    DEFPUSHBUTTON   "&Cancel",IDCANCEL,224,37,50,14
+    PUSHBUTTON      "&All",IDC_B_ALL,64,37,50,14
+    PUSHBUTTON      "&Skip",IDC_B_SKIP,167,37,50,14
+    LTEXT           "Key Name:",-1,7,2,37,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_KEYNAME,47,2,214,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "&New name:",IDC_ST_NEWNAME,7,18,37,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_NEWNAME,47,18,209,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    PUSHBUTTON      "&Edit",IDC_B_CHOOSE,258,18,23,12
+END
+
+ASKREPLACEKEY DIALOG DISCARDABLE  0, 0, 281, 60
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Confirm key replacement"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Replace",IDOK,7,39,50,14
+    DEFPUSHBUTTON   "&Cancel",IDCANCEL,224,39,50,14
+    PUSHBUTTON      "&All",IDC_B_ALL,64,39,50,14
+    PUSHBUTTON      "&Skip",IDC_B_SKIP,167,39,50,14
+    EDITTEXT        IDC_KEYNAME,47,2,227,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Key name:",-1,7,2,37,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_NEWNAME,47,19,227,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "New name:",IDC_ST_NEWNAME,7,19,37,12,SS_CENTERIMAGE
+END
+
+ASKDSTKEYEXISTS2 DIALOG DISCARDABLE  0, 0, 281, 58
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Destination key already exists!"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Merge",IDOK,61,37,50,14
+    DEFPUSHBUTTON   "&Cancel",IDCANCEL,170,37,50,14
+    LTEXT           "Key Name:",-1,7,2,37,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_KEYNAME,47,2,227,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "&New name:",IDC_ST_NEWNAME,7,18,37,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_NEWNAME,47,18,227,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+END
+
+GOTOKEY DIALOG DISCARDABLE  0, 0, 206, 46
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Go to key"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Key:",-1,7,9,15,8
+    EDITTEXT        IDC_E_KEYNAME,26,7,173,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,45,25,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,109,25,50,14
+END
+
+ADDFAVKEY DIALOG DISCARDABLE  0, 0, 206, 114
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Add to favorites"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Title:",IDC_STATIC,7,9,16,8
+    EDITTEXT        IDC_E_KEYTITLE,31,7,168,12,ES_AUTOHSCROLL
+    LTEXT           "&Key:",IDC_STATIC,7,28,15,8
+    EDITTEXT        IDC_E_KEYNAME,26,25,173,12,ES_AUTOHSCROLL
+    CONTROL         "&Value:",IDC_C_USEVAL,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,54,36,10
+    EDITTEXT        IDC_VNAME,46,53,153,12,ES_AUTOHSCROLL | WS_DISABLED
+    CONTROL         "&Comment:",IDC_C_USECOMM,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,72,47,10
+    EDITTEXT        IDC_E_COMMENT,56,71,143,12,ES_AUTOHSCROLL | WS_DISABLED
+    GROUPBOX        "Incompatible with standard regedit:",IDC_STATIC,2,42,
+                    201,46
+    DEFPUSHBUTTON   "OK",IDOK,45,93,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,109,93,50,14
+END
+
+ASKGOTOFOUND DIALOG DISCARDABLE  0, 0, 281, 79
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Found"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "&Edit now",IDOK,7,58,50,14
+    DEFPUSHBUTTON   "&Cancel",IDCANCEL,224,58,50,14
+    PUSHBUTTON      "&Go to",IDC_B_ALL,64,58,50,14
+    PUSHBUTTON      "&Skip",IDC_B_SKIP,167,58,50,14
+    EDITTEXT        IDC_KEYNAME,47,2,214,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "For key:",-1,19,2,25,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_OLDNAME,48,22,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Value name:",-1,7,22,39,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_OLDDATA,48,39,226,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Value data:",-1,7,39,39,12,SS_CENTERIMAGE
+END
+
+ASKSRCCOPYFAIL DIALOG DISCARDABLE  0, 0, 263, 45
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Can't open source key!"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "S&kip key",IDOK,7,24,50,14
+    PUSHBUTTON      "&Stop",IDCANCEL,206,24,50,14
+    PUSHBUTTON      "Skip &All",IDYES,61,24,50,14
+    LTEXT           "Key Name:",-1,7,2,37,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_KEYNAME,47,2,209,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    CONTROL         "&Ignore errors",IDIGNORE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,123,24,57,14
+END
+
+SETTINGS DIALOG DISCARDABLE  0, 0, 186, 95
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Settings"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,66,74,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,74,50,14
+    CONTROL         "&Allow deletion of critically important keys",
+                    IDC_C_ALLOWCRIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    7,141,10
+    CONTROL         "&Save settings",IDC_C_SAVESETTINGS,"Button",
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,7,23,59,10
+    CONTROL         "&Enable RegReplaceKey menu item",IDC_C_ENRRKMENU,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,39,126,10
+END
+
+ASKGOTOFOUNDKEY DIALOG DISCARDABLE  0, 0, 281, 42
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Found"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&Go to",IDC_B_ALL,64,21,50,14
+    PUSHBUTTON      "&Skip",IDC_B_SKIP,167,21,50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,224,21,50,14
+    PUSHBUTTON      "&Edit now",IDOK,7,21,50,14,WS_DISABLED
+    EDITTEXT        IDC_KEYNAME,40,2,234,12,ES_AUTOHSCROLL | ES_NOHIDESEL | 
+                    ES_READONLY | ES_WANTRETURN
+    LTEXT           "Key:",-1,19,2,18,12,SS_CENTERIMAGE
+END
+
+SRCHVALTYPE DIALOG DISCARDABLE  0, 0, 305, 162
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Select value types (as described in winnt.h)"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,87,141,50,14,NOT WS_TABSTOP
+    PUSHBUTTON      "Cancel",IDCANCEL,168,141,50,14,NOT WS_TABSTOP
+    CONTROL         "REG_NONE (No value type)",IDC_C_0,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,7,106,10
+    CONTROL         "REG_&SZ (Unicode nul terminated string)",IDC_C_1,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,18,142,10
+    CONTROL         "REG_E&XPAND_SZ (Unicode nul terminated string with environment variable references)",
+                    IDC_C_2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,29,291,
+                    10
+    CONTROL         "REG_&BINARY (Free form binary)",IDC_C_3,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,40,118,10
+    CONTROL         "REG_DWORD (32-bit number = REG_DWORD_LITTLE_ENDIAN)",
+                    IDC_C_4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,51,228,
+                    10
+    CONTROL         "REG_DWORD_BIG_ENDIAN (32-bit number)",IDC_C_5,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,62,160,10
+    CONTROL         "REG_&LINK (Symbolic Link (unicode))",IDC_C_6,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,73,132,10
+    CONTROL         "REG_&MULTI_SZ (Multiple Unicode strings)",IDC_C_7,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,84,151,10
+    CONTROL         "REG_RESOURCE_LIST (Resource list in the resource map)",
+                    IDC_C_8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,95,205,
+                    10
+    CONTROL         "REG_FULL_RESOURCE_DESCRIPTOR (Resource list in the hardware description)",
+                    IDC_C_9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,106,281,
+                    10
+    CONTROL         "REG_RESOURCE_REQUIREMENTS_LIST",IDC_C_10,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,117,157,10
+    CONTROL         "others",IDC_C_11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    7,128,35,10
+END
+
+EDBINARY_AV DIALOGEX 0, 0, 241, 146
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Edit Binary"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,68,127,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,126,127,50,14
+    LTEXT           "zzz",IDC_VNAME,7,5,227,8
+    CONTROL         "",IDC_HEXEDIT,"MyHexEdit",WS_TABSTOP,7,19,227,100,
+                    WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Apply",IDC_APPLY,184,127,50,14,WS_DISABLED
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION GEN_VER_DIGITAL_VERSION
+ PRODUCTVERSION GEN_VER_DIGITAL_VERSION
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "https://github.com/datadiode/regedt33\0"
+            VALUE "CompanyName", "Alexander Melkov et al.\0"
+            VALUE "FileDescription", "regedt33\0"
+            VALUE "FileVersion", GEN_VER_VERSION_STRING
+            VALUE "InternalName", "regedt33\0"
+            VALUE "LegalCopyright", "GPL-2.0-or-later\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "regedt33.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "regedt33\0"
+            VALUE "ProductVersion", GEN_VER_VERSION_STRING
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
