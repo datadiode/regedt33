@@ -6,7 +6,10 @@
 #include "regsavld.h"
 
 HINSTANCE hInst;
-HWND MainWindow, SbarW, hwndToolTip, TreeW, ListW, LastFocusedW, RplProgrDlg = 0;
+HWND MainWindow, SbarW, hwndToolTip, TreeW, ListW, LastFocusedW, RplProgrDlg;
+#ifdef _WIN32_WCE
+HWND CbarW;
+#endif
 HCURSOR EWcur;
 HIMAGELIST imt;
 LRESULT CALLBACK WindowProc (HWND,UINT,WPARAM,LPARAM);
@@ -18,8 +21,10 @@ INT_PTR CALLBACK EditDWORD (HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK DialogAbout (HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK DialogSettings(HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK DialogMVCP (HWND,UINT,WPARAM,LPARAM);
+#ifndef _WIN32_WCE
 INT_PTR CALLBACK DialogCR(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
 INT_PTR CALLBACK DialogDcR(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
+#endif
 INT_PTR CALLBACK DialogGotoKey(HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK DialogAddFavKey(HWND,UINT,WPARAM,LPARAM);
 
@@ -48,14 +53,22 @@ int RefreshSubtree(HTREEITEM hfc, const TCHAR *kname, HKEY hk);
 int ConnectRegistry(achar &comp, HKEY node, const TCHAR *node_name5, TVINSERTSTRUCT &tvins);
 TCHAR szClsName[]=_T("regedit33");
 TCHAR szWndName[]=_T("Advanced Registry Editor");
+
+#ifndef _WIN32_WCE
 bool has_rest_priv = true, has_back_priv = true;
 bool co_initialized = false;
 volatile bool rr_connecting = false;
+#endif
 
 int xw=10,yw=10,dxw=600,dyw=400,xTree=150,xName=150,xData=400;
 bool sDat=0, sVal=0, sKeys=0, sMatch=0;
 DWORD Settings[16];
 DWORD SbarHeight;
+#ifdef _WIN32_WCE
+DWORD CbarHeight;
+#else
+DWORD const CbarHeight = 0;
+#endif
 bool onWpos;
 int xWpos;
 TCHAR *currentitem=NULL;
@@ -65,7 +78,7 @@ HFONT Cour12;
 HPEN ThickPen;
 HMENU theFavMenu = NULL, theFileMenu = NULL, theEditMenu = NULL;
 struct favitem_t { TCHAR *name, *key, *value, *comment; };
-vector<favitem_t> favItems;
+static vector<favitem_t> favItems;
 #define REFAVPATH _T("Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit\\Favorites")
 #define MYCOMP _T("My Computer\\")
 #define MYCOMPLEN 12
@@ -75,8 +88,19 @@ HIMAGELIST dragiml = 0;
 bool is_dragging = false, is_key_dragging = false; 
 bool prev_candrop = false, could_ever_drop = false;
 HTREEITEM prevdhlti = 0;
+// TreeView_SetItemState is documented as 5.80, but it doesn't use anything!!!
+#ifndef TreeView_SetItemState
+#define TreeView_SetItemState(hwndTV, hti, data, _mask) \
+{ TVITEM _ms_TVi;\
+  _ms_TVi.mask = TVIF_STATE; \
+  _ms_TVi.hItem = hti; \
+  _ms_TVi.stateMask = _mask;\
+  _ms_TVi.state = data;\
+  SNDMSG((hwndTV), TVM_SETITEM, 0, (LPARAM)(TV_ITEM FAR *)&_ms_TVi);\
+}
+#endif
 HCURSOR curs_arr = 0, curs_no = 0;
-HICON regsmallicon = 0;
+//HICON regsmallicon = 0;
 time_t prevdhltibtm = 0;
 
 TCHAR *mvcpkeyfrom = 0, *mvcpkeyto = 0;
@@ -93,14 +117,13 @@ struct disconnect_remote_dialog_data {
   ~disconnect_remote_dialog_data() { free(keys); }
 };
 
-HTREEITEM HKCR,HKCU,HKLM,HKUS,HKCC,HKDD,HKPD;
+static HTREEITEM HKCR,HKCU,HKLM,HKUS,HKCC,HKDD,HKPD;
 
-int WINAPI WinMain (HINSTANCE hTI, HINSTANCE, LPSTR lpszargs, int nWinMode) {
+int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   HWND hwnd;
   MSG msg;
   WNDCLASS wcl;
   hInst=hTI;
-
 
   if (FindWindow(szClsName,NULL)) {MessageBeep(MB_OK);return 0;}//?
   InitCommonControls();
@@ -111,12 +134,15 @@ int WINAPI WinMain (HINSTANCE hTI, HINSTANCE, LPSTR lpszargs, int nWinMode) {
   wcl.style=CS_HREDRAW | CS_VREDRAW;
   wcl.hIcon=LoadIcon (hTI,_T("RegEdit"));
   wcl.hCursor=LoadCursor(NULL,IDC_SIZEWE);//LoadCursor (NULL, IDC_ARROW);
+#ifndef _WIN32_WCE
   wcl.lpszMenuName=_T("MainMenu");
+#else
+  wcl.lpszMenuName=NULL;
+#endif
   wcl.cbClsExtra=0;
   wcl.cbWndExtra=0;
   wcl.hbrBackground=(HBRUSH)GetStockObject (LTGRAY_BRUSH);
   if (!RegisterClass (&wcl)) return 0;
-
 
   wcl.lpszClassName=_T("MyHexEdit");
   wcl.lpfnWndProc=MyHexEditProc;
@@ -130,14 +156,18 @@ int WINAPI WinMain (HINSTANCE hTI, HINSTANCE, LPSTR lpszargs, int nWinMode) {
   imt=ImageList_LoadBitmap(hTI,MAKEINTRESOURCE(IDB_TYPES),16,0,CLR_NONE);
   img_up=LoadBitmap(hTI,_T("ARROWUP"));
   img_down=LoadBitmap(hTI,_T("ARROWDOWN"));
-  Cour12=CreateFont(16,8,0,0,FW_LIGHT,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,FIXED_PITCH | FF_DONTCARE, _T("Courier New"));
+  static LOGFONT const lf = {
+    16, 8, 0, 0, FW_LIGHT, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+    CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH | FF_DONTCARE, _T("Courier New")
+  };
+  Cour12=CreateFontIndirect(&lf);
   ThickPen=CreatePen(PS_SOLID,3,RGB(0,0,0));
 
   curs_no = LoadCursor(NULL, IDC_NO);
   if (!curs_no) ErrMsgDlgBox(_T("LoadCursor(NULL, IDC_NO)"));
   curs_arr = LoadCursor(NULL, IDC_ARROW);
   if (!curs_arr) ErrMsgDlgBox(_T("LoadCursor(NULL, IDC_ARROW)"));
-  regsmallicon = LoadIcon(hInst, _T("REGSMALL"));
+  //regsmallicon = LoadIcon(hInst, _T("REGSMALL"));
 
 
   //Beep(300,10);
@@ -158,10 +188,16 @@ int WINAPI WinMain (HINSTANCE hTI, HINSTANCE, LPSTR lpszargs, int nWinMode) {
   ShowWindow(hwnd,nWinMode);
   UpdateWindow(hwnd);
 
-  theFavMenu = GetSubMenu(GetMenu(hwnd), 3);
-  theFileMenu = GetSubMenu(GetMenu(hwnd), 0);
-  theEditMenu = GetSubMenu(GetMenu(hwnd), 1);
+#ifdef _WIN32_WCE
+  HMENU theMenu = CommandBar_GetMenu(CbarW, 0);
+#else 
+  HMENU theMenu = GetMenu(hwnd);
+#endif
+  theFavMenu = GetSubMenu(theMenu, 3);
+  theFileMenu = GetSubMenu(theMenu, 0);
+  theEditMenu = GetSubMenu(theMenu, 1);
 
+#ifndef _WIN32_WCE
   if (EnablePrivilege_NT(0, SE_BACKUP_NAME)) {
     has_back_priv = false;
     //ErrMsgDlgBox(SE_BACKUP_NAME);
@@ -171,6 +207,7 @@ int WINAPI WinMain (HINSTANCE hTI, HINSTANCE, LPSTR lpszargs, int nWinMode) {
     //ErrMsgDlgBox(SE_RESTORE_NAME);
   }
   EnablePrivilege_NT(0, SE_SHUTDOWN_NAME); //may be...
+#endif
 
   while (GetMessage (&msg,NULL,0,0)) {
 	TranslateMessage (&msg);
@@ -179,7 +216,11 @@ int WINAPI WinMain (HINSTANCE hTI, HINSTANCE, LPSTR lpszargs, int nWinMode) {
   //CloseHandle(imt);
   DeleteObject(img_up); DeleteObject(img_down);
   DeleteObject(Cour12); DeleteObject(ThickPen);
+
+#ifndef _WIN32_WCE
   if (co_initialized) CoUninitialize();
+#endif
+
   return 0;
 }
 
@@ -199,7 +240,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	  if (LastFocusedW==TreeW) LastFocusedW=ListW;
 	  else LastFocusedW=TreeW;
 	  SetFocus(LastFocusedW);
-	  Beep(500,50);
+	  //Beep(500,50);
 	}
     if ((TCHAR)wParam == 27 && is_dragging) {
       ValuesEndDrag(hwnd, false);
@@ -257,7 +298,8 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
     case IDM_EXPORTREGFILE:
       break;
-    
+
+#ifndef _WIN32_WCE
     case IDM_REGISTRY_CONNECT: {
         if (rr_connecting) {
           MessageBox(hwnd, _T("Previous connection has not been completed yet"), _T("Connect network registry"), MB_ICONSTOP);
@@ -371,6 +413,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         }
       }
       break;
+#endif
 
     case IDM_FAV_GOTO: {
         fchar key;
@@ -619,6 +662,12 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	xTree = MulDiv(rc.right - rc.left, xTree, dxw);
 	xName = MulDiv(rc.right - rc.left, xName, dxw);
 	xData = MulDiv(rc.right - rc.left, xData, dxw);
+#ifdef _WIN32_WCE
+	CbarW = CommandBar_Create(hInst, hwnd, 1);
+	CommandBar_InsertMenubarEx(CbarW, hInst, _T("MainMenu"), 0);
+	CommandBar_Show(CbarW, TRUE);
+	CbarHeight = CommandBar_Height(CbarW);
+#endif
 	SbarW = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_BORDER | SBARS_SIZEGRIP, _T("Root"), hwnd, 1001);
 	hwndToolTip = CreateWindowEx( 0, TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_ALWAYSTIP,
 		CW_USEDEFAULT, CW_USEDEFAULT, 20, 20, hwnd, NULL, hInst, NULL);
@@ -650,12 +699,14 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	HKLM=TreeView_InsertItem(TreeW,&tvins);
 	tvins.item.pszText=_T("HKUS");
 	HKUS=TreeView_InsertItem(TreeW,&tvins);
+#ifndef _WIN32_WCE
 	tvins.item.pszText=_T("HKCC");
 	HKCC=TreeView_InsertItem(TreeW,&tvins);
 	tvins.item.pszText=_T("HKDD");//Win95
 	HKCC=TreeView_InsertItem(TreeW,&tvins);
 	tvins.item.pszText=_T("HKPD");//WinNT
 	HKCC=TreeView_InsertItem(TreeW,&tvins);
+#endif
 	//ListView Setup
 	lvcol.mask=LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH;
 	lvcol.fmt=LVCFMT_LEFT;
@@ -675,6 +726,9 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
   case WM_DESTROY:
 	//DeleteObject(MyFnt); DeleteObject(MyFnS);
 	//DeleteObject(DlgThinFnt); //DeleteObject(Sans8);
+#ifdef _WIN32_WCE
+	if (CbarW) CommandBar_Destroy(CbarW);
+#endif
 	PostQuitMessage (0);
 	break;
 
@@ -726,10 +780,15 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		hk=GetKeyByItem(TreeW,tvins.hParent,KEY_ENUMERATE_SUB_KEYS);
 		tvins.item.pszText=s;
 		n=0;
-		while(RegEnumKeyEx(hk,n++,s,&d,NULL,NULL,NULL,&lwt)==ERROR_SUCCESS) {
-		  RegOpenKey(hk,s,&hks);
-		  tvins.item.cChildren=(RegEnumKey(hks,0,ss,512)==ERROR_SUCCESS);
-		  CloseKey_NHC(hks);
+		while (RegEnumKeyEx(hk,n++,s,&d,NULL,NULL,NULL,&lwt)==ERROR_SUCCESS) {
+		  tvins.item.cChildren=0;
+		  if (RegOpenKeyEx(hk,s,0,KEY_READ,&hks)==ERROR_SUCCESS) {
+		    d=512;
+		    if (RegEnumKeyEx(hks,0,ss,&d,NULL,NULL,NULL,&lwt)==ERROR_SUCCESS) {
+		      tvins.item.cChildren=1;
+		    }
+		    CloseKey_NHC(hks);
+		  }
 		  if (_tcscmp(sss,s)) TreeView_InsertItem(TreeW,&tvins);
 		  d=512;
 		}
@@ -954,12 +1013,12 @@ e201dbl:
 		  tvins.item.hItem=hti.hItem, tvins.item.mask=TVIF_CHILDREN | TVIF_STATE;
 		  tvins.item.stateMask=TVIS_EXPANDED | TVIS_EXPANDEDONCE;
 		  TreeView_GetItem(TreeW,&tvins.item);
-		  MENUITEMINFO mii;
-		  mii.cbSize=sizeof(mii); mii.fMask=MIIM_STATE | MIIM_TYPE | MIIM_ID;
-		  mii.fType=MFT_STRING, mii.wID=330-((tvins.item.state&TVIS_EXPANDED)!=0);
-		  mii.dwTypeData=(tvins.item.state&TVIS_EXPANDED)?_T("Collapse"):_T("Expand");
-		  mii.fState=MFS_DEFAULT | ((tvins.item.cChildren==0) ? MFS_DISABLED:0);
-		  InsertMenuItem(pum,mii.wID,0,&mii);
+		  AppendMenu(pum,tvins.item.cChildren ? MF_ENABLED : MF_GRAYED,
+		      330-((tvins.item.state&TVIS_EXPANDED)!=0),
+		      (tvins.item.state & TVIS_EXPANDED) ? _T("Collapse") : _T("Expand"));
+#ifndef _WIN32_WCE
+		  SetMenuDefaultItem(pum, 0, MF_BYPOSITION);
+#endif
 		  mn1=TypeMenu(300,0,CanCreate);
 		  AppendMenu(pum,MF_POPUP,(UINT_PTR)mn1,_T("&New"));
 		  AppendMenu(pum,MF_STRING | cnc,331,_T("&Find..."));
@@ -1005,11 +1064,10 @@ e201dbl:
 			RegQueryValueEx(hk,name,NULL,&type,NULL,NULL);
 			type_n=GetTypeMnuNo(type);
 			mn2=TypeMenu(350,type_n,cnc);
-			MENUITEMINFO mii;
-			mii.cbSize=sizeof(mii); mii.fMask=MIIM_STATE | MIIM_TYPE | MIIM_ID;
-			mii.fType=MFT_STRING, mii.dwTypeData=_T("&Modify");
-			mii.fState=MFS_DEFAULT, mii.wID=320;
-			InsertMenuItem(pum,320,0,&mii);
+			AppendMenu(pum,MF_STRING,320,_T("&Modify"));
+#ifndef _WIN32_WCE
+			SetMenuDefaultItem(pum, 0, MF_BYPOSITION);
+#endif
 			AppendMenu(pum,MF_POPUP,(UINT_PTR)mn2,_T("&Change Type"));
 			AppendMenu(pum,MF_SEPARATOR,-1,_T(""));
 			AppendMenu(pum,MF_STRING | cnc,321,_T("&Delete"));
@@ -1070,8 +1128,8 @@ e201dbl:
       ReleaseCapture();
       if (LOWORD(lParam)>5 && LOWORD(lParam)<dxw-5) {
         xTree=LOWORD(lParam)+xWpos;
-        SetWindowPos(TreeW,HWND_TOP,0,0,min(dxw,xTree),dyw-SbarHeight,0);
-        SetWindowPos(ListW,HWND_TOP,xTree+3,0,dxw-xTree-3,dyw-SbarHeight,0);
+        SetWindowPos(TreeW,HWND_TOP,0,CbarHeight,min(dxw,xTree),dyw-SbarHeight-CbarHeight,0);
+        SetWindowPos(ListW,HWND_TOP,xTree+3,CbarHeight,dxw-xTree-3,dyw-SbarHeight-CbarHeight,0);
       }
     }
     if (is_dragging) ValuesEndDrag(hwnd, true);
@@ -1092,8 +1150,8 @@ e201dbl:
       int xtr1 = LOWORD(lParam)+xWpos;
       if (xTree == xtr1) { Sleep(1); break; }
       xTree = xtr1;
-      SetWindowPos(TreeW,HWND_TOP,0,0,min(dxw,xTree),dyw-SbarHeight,0);
-      SetWindowPos(ListW,HWND_TOP,xTree+3,0,dxw-xTree-3,dyw-SbarHeight,0);
+      SetWindowPos(TreeW,HWND_TOP,0,CbarHeight,min(dxw,xTree),dyw-SbarHeight-CbarHeight,0);
+      SetWindowPos(ListW,HWND_TOP,xTree+3,CbarHeight,dxw-xTree-3,dyw-SbarHeight-CbarHeight,0);
     }
     if (is_dragging) {
       void ValuesContinueDrag(HWND hwnd, LPARAM lParam);
@@ -1104,8 +1162,8 @@ e201dbl:
   case WM_SIZE:
     SendMessage(SbarW,WM_SIZE,wParam,lParam);
     dxw=LOWORD(lParam),dyw=HIWORD(lParam);
-    SetWindowPos(TreeW,HWND_TOP,0,0,min(dxw,xTree),dyw-SbarHeight,0);
-    SetWindowPos(ListW,HWND_TOP,xTree+3,0,dxw-xTree-3,dyw-SbarHeight,0);
+    SetWindowPos(TreeW,HWND_TOP,0,CbarHeight,min(dxw,xTree),dyw-SbarHeight-CbarHeight,0);
+    SetWindowPos(ListW,HWND_TOP,xTree+3,CbarHeight,dxw-xTree-3,dyw-SbarHeight-CbarHeight,0);
     //if (wParam==SIZE_MINIMIZED) ShowWindow(hwnd,SW_HIDE);
     break;
     
@@ -2071,6 +2129,7 @@ int val_ed_dialog_data::EditValue(HWND hwnd) {
   return 0;
 }
 
+#ifndef _WIN32_WCE
 INT_PTR CALLBACK DialogCR(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
     connect_remote_dialog_data *cr;
     switch (msg) {
@@ -2235,6 +2294,7 @@ int ConnectRegistry(achar &comp, HKEY node, const TCHAR *node_name5, TVINSERTSTR
   if (hasquit) PostQuitMessage(quitParam);
   return rasc.retcode;
 }
+#endif
 
 void ErrMsgDlgBox(LPCTSTR sss, DWORD le) {
   TCHAR* lpMsgBuf;
@@ -2273,6 +2333,7 @@ void ErrMsgDlgBox2(LPCTSTR sss, LPCTSTR sss1, DWORD le) {
   LocalFree( lpMsgBuf );
 }
 
+#ifndef _WIN32_WCE
 void CommDlgErrMsgDlgBox(LPCTSTR sss, DWORD le) {
   const TCHAR *c;
   switch(le) {
@@ -2332,6 +2393,7 @@ int EnablePrivilege_NT(LPCTSTR where, LPCTSTR name) {
     if (!AdjustTokenPrivileges(CurProcToken, false, &tp, 0, NULL, NULL)) return 3;
     return 0;
 }
+#endif
 
 #if 0
 class MySecur : public ISecurityInformation {

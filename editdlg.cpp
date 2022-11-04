@@ -76,8 +76,10 @@ INT_PTR CALLBACK EditMString (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
     WM_DRAG_LIST = RegisterWindowMessage(DRAGLISTMSGSTRING);
 #endif
 	params->applyEn = 2;
+#ifndef _WIN32_WCE
 	SendDlgItemMessage(hwnd,IDC_MOVEUP,BM_SETIMAGE,IMAGE_BITMAP,(LPARAM)img_up);
 	SendDlgItemMessage(hwnd,IDC_MOVEDOWN,BM_SETIMAGE,IMAGE_BITMAP,(LPARAM)img_down);
+#endif
 	SetDlgItemText(hwnd,IDC_VNAME,params->name.c);
 	SetDlgItemText(hwnd,IDC_EDITSTR,params->data.c);
 	for(n=numstr=0,c=params->data.c;n<(int)params->data.l /*&& c[n]*/;) {

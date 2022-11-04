@@ -1,3 +1,6 @@
+#ifdef _WIN32_WCE
+#define SS_PATHELLIPSIS                 0
+#endif
 #define IDC_STATIC                      -1
 #define IDB_TYPES                       105
 #define IDB_ARROWUP                     108

@@ -12,12 +12,9 @@ INT_PTR CALLBACK DialogLDH(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
       SetDlgItemText(hwnd, IDC_E_KEYNAME, dd->root_key_name);
       SetEditCtrlHistAndText(hwnd, IDC_E_FILENAME, dd->fname.c? dd->fname.c : _T(""));
       SetDlgEditCtrlHist(hwnd, IDC_E_SUBKEYNAME);
-      //if (win9x) {
-      //  EnableWindow(GetDlgItem(hwnd, IDC_SEWARN), 0);
-      //  EnableWindow(GetDlgItem(hwnd, IDC_B_GETPRIV), 0);
-      //} else {
+#ifndef _WIN32_WCE
       SetDlgItemText(hwnd, IDC_SEWARN, has_rest_priv? _T("You have \"") SE_RESTORE_NAME _T("\"") : _T("You don't have \"") SE_RESTORE_NAME _T("\""));
-      //}
+#endif
       return 1;
     case WM_CLOSE: EndDialog(hwnd,0); return 1;
     case WM_COMMAND:
@@ -42,6 +39,7 @@ INT_PTR CALLBACK DialogLDH(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           }
         }
         break;
+#ifndef _WIN32_WCE
       case IDC_B_GETPRIV: 
         {
           TCHAR *c = (TCHAR *)_tcschr(dd->root_key_name, ':');
@@ -55,6 +53,7 @@ INT_PTR CALLBACK DialogLDH(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           if (c) *c = ':';
         }
         break;
+#endif
       }
 	  return 1;
 	}
@@ -69,12 +68,9 @@ INT_PTR CALLBACK DialogSVK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
       dd = (save_key_dialog_data*)lParam;
       SetEditCtrlHistAndText(hwnd, IDC_E_KEYNAME, dd->key_name.c);
       SetEditCtrlHistAndText(hwnd, IDC_E_FILENAME, dd->fname.c? dd->fname.c : _T(""));
-      //if (win9x) {
-      //  EnableWindow(GetDlgItem(hwnd, IDC_SEWARN), 0);
-      //  EnableWindow(GetDlgItem(hwnd, IDC_B_GETPRIV), 0);
-      //} else {
+#ifndef _WIN32_WCE
       SetDlgItemText(hwnd, IDC_SEWARN, has_back_priv? _T("You have \"") SE_BACKUP_NAME _T("\"") : _T("You don't have \"") SE_BACKUP_NAME _T("\""));
-      //}
+#endif
       return 1;
     case WM_CLOSE: EndDialog(hwnd,0); return 1;
     case WM_COMMAND:
@@ -99,6 +95,7 @@ INT_PTR CALLBACK DialogSVK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           }
         }
         break;
+#ifndef _WIN32_WCE
       case IDC_B_GETPRIV: 
         {
           TCHAR *c = _tcschr(dd->key_name.c, ':'), *cc = _tcschr(dd->key_name.c, '\\');
@@ -113,6 +110,7 @@ INT_PTR CALLBACK DialogSVK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           if (c) *c = ':';
         }
         break;
+#endif
       }
 	  return 1;
 	}
@@ -131,12 +129,9 @@ INT_PTR CALLBACK DialogLDK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
       SendDlgItemMessage(hwnd, IDC_CHK_NOLAZY , BM_SETCHECK, dd->nolazy, 0);
       SendDlgItemMessage(hwnd, IDC_CHK_REFRESH, BM_SETCHECK, dd->refresh, 0);
       SendDlgItemMessage(hwnd, IDC_CHK_HIVEVOL, BM_SETCHECK, dd->volatil, 0);
-      //if (win9x) {
-      //  EnableWindow(GetDlgItem(hwnd, IDC_SEWARN), 0);
-      //  EnableWindow(GetDlgItem(hwnd, IDC_B_GETPRIV), 0);
-      //} else {
+#ifndef _WIN32_WCE
       SetDlgItemText(hwnd, IDC_SEWARN, has_rest_priv? _T("You have \"") SE_RESTORE_NAME _T("\"") : _T("You don't have \"") SE_RESTORE_NAME _T("\""));
-      //}
+#endif
       return 1;
     case WM_CLOSE: EndDialog(hwnd,0); return 1;
     case WM_COMMAND:
@@ -165,6 +160,7 @@ INT_PTR CALLBACK DialogLDK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           }
         }
         break;
+#ifndef _WIN32_WCE
       case IDC_B_GETPRIV: 
         {
           TCHAR *c = _tcschr(dd->key_name.c, ':'), *cc = _tcschr(dd->key_name.c, '\\');
@@ -179,6 +175,7 @@ INT_PTR CALLBACK DialogLDK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           if (c) *c = ':';
         }
         break;
+#endif
       }
 	  return 1;
 	}
@@ -195,12 +192,9 @@ INT_PTR CALLBACK DialogRplK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
       SetEditCtrlHistAndText(hwnd, IDC_E_KEYNAME, dd->key_name.c);
       SetEditCtrlHistAndText(hwnd, IDC_E_FILENAME, dd->fname_new.c? dd->fname_new.c : _T(""));
       SetEditCtrlHistAndText(hwnd, IDC_E_FILENAME2, dd->fname_old.c? dd->fname_old.c : _T(""));
-      //if (win9x) {
-      //  EnableWindow(GetDlgItem(hwnd, IDC_SEWARN), 0);
-      //  EnableWindow(GetDlgItem(hwnd, IDC_B_GETPRIV), 0);
-      //} else {
+#ifndef _WIN32_WCE
       SetDlgItemText(hwnd, IDC_SEWARN, has_rest_priv? _T("You have \"") SE_RESTORE_NAME _T("\"") : _T("You don't have \"") SE_RESTORE_NAME _T("\""));
-      //}
+#endif
       return 1;
     case WM_CLOSE: EndDialog(hwnd,0); return 1;
     case WM_COMMAND:
@@ -235,6 +229,7 @@ INT_PTR CALLBACK DialogRplK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           }
         }
         break;
+#ifndef _WIN32_WCE
       case IDC_B_GETPRIV: 
         {
           TCHAR *c = _tcschr(dd->key_name.c, ':'), *cc = _tcschr(dd->key_name.c, '\\');
@@ -249,6 +244,7 @@ INT_PTR CALLBACK DialogRplK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
           if (c) *c = ':';
         }
         break;
+#endif
       }
 	  return 1;
 	}
@@ -256,6 +252,7 @@ INT_PTR CALLBACK DialogRplK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
 }
 
 int DisplayOFNdlg(achar &name, const TCHAR *title, const TCHAR *filter, bool no_RO, bool for_save) {
+#ifndef _WIN32_WCE
   if (name.s < 4096) name.resize(4096);
   OPENFILENAME ofn;
 #ifdef OPENFILENAME_SIZE_VERSION_400
@@ -294,6 +291,9 @@ int DisplayOFNdlg(achar &name, const TCHAR *title, const TCHAR *filter, bool no_
   DWORD err = CommDlgExtendedError();
   if (err) CommDlgErrMsgDlgBox(_T("DisplayOFNdlg"), err);
   return 1;
+#else
+  return 0;
+#endif
 }
 
 inline TCHAR *chomp(TCHAR *c) {

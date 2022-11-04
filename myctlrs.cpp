@@ -1,5 +1,6 @@
 #include <tchar.h>
 #include <windows.h>
+#include "wince.h"
 #include <assert.h>
 
 #include <algorithm>
@@ -94,7 +95,7 @@ struct HexEditorState {
   void he_onchange(WORD w);
   int setScrollRange();
   int setScrollPos(bool redraw = false);
-  int vscroll(WPARAM, HWND sb);
+  int vscroll(WPARAM);
   void Paint();
   void onChar(WPARAM wParam);
   void onKeyDown(WPARAM wParam);
@@ -289,27 +290,23 @@ int HexEditorState::setScrollRange() {
   //return SendMessage(scrollwnd, SBM_SETRANGE, 0, sr);
   return SetScrollRange(hwnd, SB_VERT, 0, sr, false);
 }
-int HexEditorState::vscroll(WPARAM wParam, HWND sb) {
+int HexEditorState::vscroll(WPARAM wParam) {
   int fv = fvline;
   int sr = datalen / numcolumns;
   SCROLLINFO si;
-  if (sb) {
-    fv += SendMessage(sb, SBM_GETPOS, 0, 0) - currscrollpos;
-  } else {
-    switch(LOWORD(wParam)) {
-    case SB_LINEDOWN: fv++; break;
-    case SB_LINEUP: fv--; break;
-    case SB_PAGEDOWN: fv += numlines; break;
-    case SB_PAGEUP: fv -= numlines; break;
-    case SB_BOTTOM: fv = sr; break;
-    case SB_TOP: fv = 0; break;
-    case SB_THUMBTRACK: case SB_THUMBPOSITION:
-      si.cbSize = sizeof (si);
-      si.fMask  = SIF_ALL;
-      GetScrollInfo (hwnd, SB_VERT, &si);
-      fv += si.nTrackPos - currscrollpos;
-      break;
-    }
+  switch(LOWORD(wParam)) {
+  case SB_LINEDOWN: fv++; break;
+  case SB_LINEUP: fv--; break;
+  case SB_PAGEDOWN: fv += numlines; break;
+  case SB_PAGEUP: fv -= numlines; break;
+  case SB_BOTTOM: fv = sr; break;
+  case SB_TOP: fv = 0; break;
+  case SB_THUMBTRACK: case SB_THUMBPOSITION:
+    si.cbSize = sizeof (si);
+    si.fMask  = SIF_ALL;
+    GetScrollInfo (hwnd, SB_VERT, &si);
+    fv += si.nTrackPos - currscrollpos;
+    break;
   }
   fv = fv > (int)(sr - numlines)? sr - numlines + 1 : fv;
   fv = fv < 0? 0 : fv;
@@ -591,8 +588,6 @@ LRESULT CALLBACK MyHexEditProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	/*!*/if (hs->numcolumns<2) hs->numcolumns=2;
     GetClientRect(hwnd, &rect);
 	//hs->scrollwnd = CreateWindow("SCROLLBAR","HexScroll",WS_CHILD | WS_VISIBLE | SBS_RIGHTALIGN | SBS_VERT, rect.right-16,0,16,rect.bottom,hwnd,(HMENU)1111,hInst,0);
-    ShowScrollBar(hwnd, SB_VERT, true);
-    EnableScrollBar(hwnd, SB_VERT, ESB_ENABLE_BOTH);
     hs->setScrollRange();
 	break;
 
@@ -620,7 +615,7 @@ LRESULT CALLBACK MyHexEditProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 	break;
 
   case WM_VSCROLL:
-    return hs->vscroll(wParam, (HWND)lParam);
+    return hs->vscroll(wParam);
 
   case WM_LBUTTONDOWN:
 	n = hs->cursorat;
@@ -657,8 +652,8 @@ LRESULT CALLBACK MyHexEditProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
   case WM_MOUSEWHEEL:
     n = 1; //An ugly hack
-    if (short(wParam>>16) < 0) n = hs->vscroll(SB_LINEDOWN, 0);
-    else if (short(wParam>>16) > 0) n = hs->vscroll(SB_LINEUP, 0);
+    if (short(wParam>>16) < 0) n = hs->vscroll(SB_LINEDOWN);
+    else if (short(wParam>>16) > 0) n = hs->vscroll(SB_LINEUP);
     if (n) return DefWindowProc(hwnd,msg,wParam,lParam);
     break;
 
@@ -771,6 +766,7 @@ LRESULT APIENTRY HistEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return 0;
   }
+#ifndef _WIN32_WCE
   if (msg == WM_DROPFILES) { // a dirty hack (I'm just too lazy)
     UINT l = DragQueryFile((HDROP)wParam, 0, 0, 0);
     fchar fname(malloc(l + 1));
@@ -779,7 +775,7 @@ LRESULT APIENTRY HistEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     SetWindowText(hwnd, fname.c);
     return 0;
   }
-
+#endif
   if (msg == WM_DESTROY) {
     vector<TCHAR*> &v = id2hist[hwnd2id[hwnd]];
     DWORD L = SendMessage(hwnd, WM_GETTEXTLENGTH,0,0);

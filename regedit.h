@@ -3,6 +3,7 @@
 #pragma once
 
 #include <windows.h>
+#include "wince.h"
 #include <winnt.h> // TBYTE
 #include <tchar.h>
 #include <ctype.h>
@@ -56,12 +57,13 @@ int SetEditCtrlHistAndText(HWND hwnd, int item, const TCHAR *c);
 void LoadSettings();
 void ErrMsgDlgBox(LPCTSTR, DWORD le = 0);
 const TCHAR* TypeCName(DWORD type);
+#ifndef _WIN32_WCE
 void CommDlgErrMsgDlgBox(LPCTSTR, DWORD);
 int EnablePrivilege_NT(LPCTSTR where, LPCTSTR name);
+extern bool has_rest_priv, has_back_priv;
+#endif
 void getDlgItemText(TCHAR *&var, HWND hwnd, int ctrl);
 void he_DefaultWindowSize(int &x, int &y);
-
-extern bool has_rest_priv, has_back_priv;
 
 extern HINSTANCE hInst;
 extern HWND MainWindow, SbarW, hwndToolTip;
@@ -147,7 +149,6 @@ struct HKRootName2Handle_item_type {
   const TCHAR *name;
   RootHandleInfo_type ki;
 };
-extern HKRootName2Handle_item_type rkeys_basic[7];
 typedef unordered_map<const TCHAR*, RootHandleInfo_type, hash_stri, str_iequal_to> n2kmap;
 typedef unordered_map<HKEY, const TCHAR*> k2nmap;
 typedef unordered_map<const TCHAR*, const TCHAR *, hash_stri, str_iequal_to> namap;

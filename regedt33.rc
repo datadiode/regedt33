@@ -37,8 +37,7 @@ BEGIN
         MENUITEM "&Export Registry File ...",   IDM_EXPORTREGFILE, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Connect Network Registry",   IDM_REGISTRY_CONNECT
-        MENUITEM "&Disconnect Network Registry", IDM_REGISTRY_DISCONNECT
-        , GRAYED
+        MENUITEM "&Disconnect Network Registry", IDM_REGISTRY_DISCONNECT, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Load Hive",                  IDM_REGISTRY_LOADHIVE
         MENUITEM "&Unload Hive",                IDM_REGISTRY_UNLOADHIVE
@@ -83,8 +82,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-REGEDIT                 ICON    DISCARDABLE     "icon1.ico"
-REGSMALL                ICON    DISCARDABLE     "icon2.ico"
+REGEDIT                 ICON    DISCARDABLE     "regedit.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -152,7 +150,7 @@ BEGIN
     LTEXT           "Value name:",IDC_STATIC,7,5,227,8
     EDITTEXT        IDC_VNAME,7,17,227,12,ES_AUTOHSCROLL | ES_READONLY
     LTEXT           "Value data:",IDC_STATIC,7,33,227,8
-    CONTROL         "",IDC_HEXEDIT,"MyHexEdit",WS_TABSTOP,7,46,227,73,
+    CONTROL         "",IDC_HEXEDIT,"MyHexEdit",WS_TABSTOP|WS_VSCROLL,7,46,227,73,
                     WS_EX_CLIENTEDGE
     PUSHBUTTON      "Apply",IDC_APPLY,184,127,50,14,WS_DISABLED
 END
@@ -241,8 +239,7 @@ BEGIN
     EDITTEXT        110,13,55,158,12,ES_CENTER | ES_AUTOHSCROLL | 
                     ES_NOHIDESEL | ES_READONLY | NOT WS_BORDER | NOT 
                     WS_TABSTOP
-    ICON            "REGEDIT",IDC_STATIC,7,13,24,24,SS_CENTERIMAGE | 
-                    SS_REALSIZEIMAGE
+    ICON            "REGEDIT",IDC_STATIC,7,13,24,24,SS_CENTERIMAGE
     LTEXT           MAKE_VERSION_STRING(GEN_VER_DIGITAL_VERSION),IDC_STATIC,7,39,24,12
     CTEXT           "About:",IDC_STATIC,71,42,42,10
     LTEXT           "One important note:\n- This is a beta release. There are bugs, and bug reports are highly desirable.",
@@ -641,7 +638,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,68,127,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,126,127,50,14
     LTEXT           "zzz",IDC_VNAME,7,5,227,8
-    CONTROL         "",IDC_HEXEDIT,"MyHexEdit",WS_TABSTOP,7,19,227,100,
+    CONTROL         "",IDC_HEXEDIT,"MyHexEdit",WS_TABSTOP|WS_VSCROLL,7,19,227,100,
                     WS_EX_CLIENTEDGE
     PUSHBUTTON      "Apply",IDC_APPLY,184,127,50,14,WS_DISABLED
 END

@@ -13,14 +13,16 @@ HKEY rk_init_s::KeyByName(const TCHAR *name, const TCHAR **out) {
   return i->second.hkey;
 }
 
-HKRootName2Handle_item_type rkeys_basic[7] = {
+static HKRootName2Handle_item_type rkeys_basic[] = {
   {_T("HKCR"), {HKEY_CLASSES_ROOT,    _T("HKEY_CLASSES_ROOT"),    4, 0}},
   {_T("HKCU"), {HKEY_CURRENT_USER,    _T("HKEY_CURRENT_USER"),    4, 0}},
   {_T("HKLM"), {HKEY_LOCAL_MACHINE,   _T("HKEY_LOCAL_MACHINE"),   5, 0}},
   {_T("HKUS"), {HKEY_USERS,           _T("HKEY_USERS"),           5, 0}},
+#ifndef _WIN32_WCE
   {_T("HKCC"), {HKEY_CURRENT_CONFIG,  _T("HKEY_CURRENT_CONFIG"),  4, 0}},
   {_T("HKDD"), {HKEY_DYN_DATA,        _T("HKEY_DYN_DATA"),        4, 0}},
-  {_T("HKPD"), {HKEY_PERFORMANCE_DATA,_T("HKEY_PERFORMANCE_DATA"),4, 0}}
+  {_T("HKPD"), {HKEY_PERFORMANCE_DATA,_T("HKEY_PERFORMANCE_DATA"),4, 0}},
+#endif
 };
 
 int rk_init_s::add(const TCHAR *name, HKEY hkey, int flags, HTREEITEM item) {
@@ -31,7 +33,7 @@ int rk_init_s::add(const TCHAR *name, HKEY hkey, int flags, HTREEITEM item) {
   return 0;
 }
 rk_init_s::rk_init_s() {
-  for(int n = 0; n < 7; n++) {
+  for(int n = 0; n < _countof(rkeys_basic); n++) {
     n2k.insert(n2kmap::value_type(rkeys_basic[n].name, rkeys_basic[n].ki));
     n2k.insert(n2kmap::value_type(rkeys_basic[n].ki.full_name, rkeys_basic[n].ki));
     k2n.insert(k2nmap::value_type(rkeys_basic[n].ki.hkey, rkeys_basic[n].name));
@@ -132,7 +134,9 @@ BOOL CanKeyBeRenamed(HWND tv,HTREEITEM item) {
 BOOL CloseKey_NHC(HKEY hk) {
   if (hk!=HKEY_CLASSES_ROOT && hk!=HKEY_CURRENT_USER &&
 	  hk!=HKEY_LOCAL_MACHINE && hk!=HKEY_USERS &&
+#ifndef _WIN32_WCE
 	  hk!=HKEY_CURRENT_CONFIG && hk!=HKEY_DYN_DATA && hk!=HKEY_PERFORMANCE_DATA &&
+#endif
 	  (HANDLE)hk!=INVALID_HANDLE_VALUE)
 	  return RegCloseKey(hk);
   else return 0;
