@@ -1,0 +1,23 @@
+version: 1.0.{build}
+image: Visual Studio 2015
+
+configuration:
+- Debug
+- DebugU
+- Release
+- ReleaseU
+
+platform:
+- x86
+- x64
+
+build:
+  verbosity: normal
+  project: regedt33.sln
+
+after_build:
+- cmd: FOR /F %%A IN (regedt33\%PLATFORM%\%CONFIGURATION%\GIT-VS-VERSION-FILE) DO SET PRODUCT_VERSION=%%A
+
+artifacts:
+- path: $(platform)\$(configuration)
+  name: regedt33_$(PRODUCT_VERSION)-$(platform)-$(configuration)
