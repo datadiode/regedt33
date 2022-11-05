@@ -316,7 +316,7 @@ INT_PTR CALLBACK EditDWORD (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
 	  if (HIWORD(wParam)==EN_UPDATE && !lock) {
 		GetDlgItemText(hwnd,IDC_HEXNUM,s,64);
 		for(n=0,cval=0;isxdigit((unsigned char)s[n]);n++) 
-          cval=(cval<<4)| ((s[n]<='9')? s[n]-'0' : toupper(s[n])-'A'+10);
+          cval=(cval<<4)| ((s[n]<='9')? s[n]-'0' : _totupper(s[n])-'A'+10);
 		_stprintf(s,_T("%i"),cval);
 		lock=1;
 		SetDlgItemText(hwnd,IDC_DECNUM,s);

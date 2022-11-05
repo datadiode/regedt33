@@ -79,7 +79,7 @@ void DoSearchAndReplace(HWND hwnd, bool nodlg, bool onlyfind) {
 
 	TCHAR *s1 = s, *e1 = e, *const s2 = s, *const e2 = e, *fullcs;
     if (km) {
-      for(; *s1 && tolower(*s1) == tolower(*e1); s1++, e1++) {
+      for(; *s1 && _totlower(*s1) == _totlower(*e1); s1++, e1++) {
         if (*s1 == '\\') s = s1 + 1, e = e1 + 1;
       }
       if ((*s1 == '\\' && !*e1) || (*e1 == '\\' && !*s1) || (!*s1 && !*e1)) {
@@ -461,9 +461,9 @@ int do_sr_str(const TCHAR *oldstr, int oldlen, TCHAR *&newstr) {
   for (n = 0; n <= oldlen - repl_find_len;) {
     if (newasz - newsz < repl_with_len*2 + 10)
 	  news = (TCHAR*)realloc(news, (newasz = newsz + repl_with_len*2 + 10) * sizeof(TCHAR));
-    if ((repl_igncase? tolower(oldstr[n]) : oldstr[n]) == rf0) {
+    if ((repl_igncase? _totlower(oldstr[n]) : oldstr[n]) == rf0) {
       int k;
-      if (repl_igncase) for(k = 0; k < repl_find_len && tolower(oldstr[n + k])==repl_find.c[k]; k++);
+      if (repl_igncase) for(k = 0; k < repl_find_len && _totlower(oldstr[n + k])==repl_find.c[k]; k++);
       else for(k = 0; k < repl_find_len && oldstr[n + k]==repl_find.c[k]; k++);
       if (k == repl_find_len) {
         memcpy(news + newsz, repl_with.c, repl_with_len * sizeof(TCHAR));

@@ -1329,7 +1329,7 @@ INT_PTR CALLBACK ValTypeDlg (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
 	  if (HIWORD(wParam)==EN_UPDATE && !lock) {
 		GetDlgItemText(hwnd,IDC_HEXNUM,s,64);
 		for(n=0,cval=0; isxdigit((unsigned char)s[n]); n++) 
-          cval = (cval << 4) | (s[n] <= '9' ? s[n]-'0' : toupper(s[n]) - 'A' + 10);
+          cval = (cval << 4) | (s[n] <= '9' ? s[n]-'0' : _totupper(s[n]) - 'A' + 10);
 		_stprintf(s,_T("%i"),cval);
 		lock=1;
 		SetDlgItemText(hwnd,IDC_DECNUM,s);
@@ -2028,10 +2028,10 @@ int ProcessCEscapes(TCHAR *c, int l) {
           int cval = 0;
           if (isxdigit((unsigned char)c[1])) {
             c++;
-            cval = *c <= '9' ? *c - '0' : toupper(*c) - 'A' + 10;
+            cval = *c <= '9' ? *c - '0' : _totupper(*c) - 'A' + 10;
             if (isxdigit((unsigned char)c[1])) {
               c++;
-              cval = (cval << 4) | (*c <= '9' ? *c - '0' : toupper(*c) - 'A' + 10);
+              cval = (cval << 4) | (*c <= '9' ? *c - '0' : _totupper(*c) - 'A' + 10);
             }
           }
           *d++ = cval;

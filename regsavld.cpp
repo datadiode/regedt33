@@ -322,7 +322,7 @@ TCHAR cslashed(TCHAR c) {
 
 TCHAR *gethex(TCHAR *c, DWORD &d) {
   for(d = 0; isxdigit(*c); c++) 
-    d = (d<<4)| ((*c<='9')? *c-'0' : toupper(*c)-'A'+10);
+    d = (d<<4)| ((*c<='9')? *c-'0' : _totupper(*c)-'A'+10);
   return c;
 }
 

@@ -17,7 +17,7 @@ struct achar {
   void checklen() { l = c? _tcslen(c) * sizeof(TCHAR) : 0; }
   DWORD size() const { return l; }
   void swap(achar &a) { TCHAR *t = c; c = a.c; a.c = t; DWORD i = s; s = a.s; a.s = i; i = l; l = a.l; a.l = i; }
-  void strlwr() { for(TCHAR *s = c, *e = c + l / sizeof(TCHAR); s < e; s++) *s = tolower(*s); }
+  void strlwr() { for(TCHAR *s = c, *e = c + l / sizeof(TCHAR); s < e; s++) *s = _totlower(*s); }
   UINT GetDlgItemText(HWND hwnd, int nIDDlgItem);
   UINT GetDlgItemTextUnCEsc(HWND hwnd, int nIDDlgItem);
   LONG QueryValue(HKEY hk, const TCHAR *name, DWORD &type);
