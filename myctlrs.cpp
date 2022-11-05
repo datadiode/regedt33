@@ -1,10 +1,11 @@
-#include <tchar.h>
 #include <windows.h>
 #include "wince.h"
+#include <tchar.h>
 #include <assert.h>
 
 #include <algorithm>
-#include <unordered_map>
+#include <map>
+#include <vector>
 
 using namespace std;
 
@@ -716,9 +717,9 @@ LRESULT CALLBACK MyHexEditProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 WNDPROC savedOrigEditProc = 0, savedOrigListProc = 0;
 HWND HistListParent = 0;
-typedef unordered_map<HWND, int> hwnd2id_map;
+typedef map<HWND, int> hwnd2id_map;
 hwnd2id_map hwnd2id;
-typedef unordered_map<int, vector<TCHAR*> > id2hist_map;
+typedef map<int, vector<TCHAR*> > id2hist_map;
 id2hist_map id2hist;
 
 LRESULT APIENTRY HistListProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {

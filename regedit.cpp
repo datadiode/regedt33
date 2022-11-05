@@ -1,6 +1,5 @@
 #include "regedit.h"
 #include "resource.h"
-#include <time.h>
 #include <Shlobj.h>
 
 #include "regsavld.h"
@@ -37,6 +36,7 @@ void SuggestTitleForKey(const TCHAR *key, fchar &title);
 void FavKeyName2ShortName(const TCHAR *k0, fchar &key);
 void ValuesAskMoveOrCopy(HWND hwnd, int mvflag, const TCHAR *dst);
 void KeyAskMoveOrCopy(HWND hwnd, int mvflag, const TCHAR *dst);
+void ValuesContinueDrag(HWND hwnd, LPARAM lParam);
 void ValuesEndDrag(HWND hwnd, bool is_ok);
 
 void GetLWHit(LVHITTESTINFO*);
@@ -101,7 +101,7 @@ HTREEITEM prevdhlti = 0;
 #endif
 HCURSOR curs_arr = 0, curs_no = 0;
 //HICON regsmallicon = 0;
-time_t prevdhltibtm = 0;
+DWORD prevdhltibtm = 0;
 
 TCHAR *mvcpkeyfrom = 0, *mvcpkeyto = 0;
 BYTE mvcp_move = 1;
@@ -1154,7 +1154,6 @@ e201dbl:
       SetWindowPos(ListW,HWND_TOP,xTree+3,CbarHeight,dxw-xTree-3,dyw-SbarHeight-CbarHeight,0);
     }
     if (is_dragging) {
-      void ValuesContinueDrag(HWND hwnd, LPARAM lParam);
       ValuesContinueDrag(hwnd, lParam);
     }
     break;
@@ -1183,7 +1182,7 @@ e201dbl:
   return 0;
 }
 
-typedef unordered_set<TCHAR*, hash_str, str_equal_to> mystrhash;
+typedef set<TCHAR*, str_less_than> mystrhash;
 
 int RefreshSubtree(HTREEITEM hti, const TCHAR *kname, HKEY hk) {
   TCHAR buf[4096];//tmp?
@@ -1638,7 +1637,7 @@ void ValuesBeginDrag(HWND hwnd, LPARAM lParam) {
   SetCapture(hwnd); 
   SetCursor(curs_no); 
   prevdhlti = 0; prev_candrop = false, could_ever_drop = false;
-  prevdhltibtm = 0;
+  prevdhltibtm = GetTickCount();
   is_key_dragging = false;
   //EnableWindow(ListW, false); SetFocus(LastFocusedW = TreeW);
 }
@@ -1664,7 +1663,7 @@ void KeyBeginDrag(HWND hwnd, LPARAM lParam) {
   SetCapture(hwnd); 
   SetCursor(curs_no); 
   prevdhlti = 0; prev_candrop = false, could_ever_drop = false;
-  prevdhltibtm = 0;
+  prevdhltibtm = GetTickCount();
   is_key_dragging = true;
   //EnableWindow(ListW, false); SetFocus(LastFocusedW = TreeW);
 }
@@ -1735,10 +1734,9 @@ void ValuesContinueDrag(HWND hwnd, LPARAM lParam) {
     if (prevdhlti) TreeView_SetItemState(TreeW, prevdhlti, 0, TVIS_DROPHILITED/*mask*/);
     if (hti) TreeView_SetItemState(TreeW, hti, TVIS_DROPHILITED, TVIS_DROPHILITED/*mask*/);
     prevdhlti = hti;
-    prevdhltibtm = 0;
+    prevdhltibtm = GetTickCount();
   } else if (hti && tvht.flags == TVHT_ONITEMBUTTON) {
-    if (!prevdhltibtm) prevdhltibtm = time(0);
-    else if (time(0) - prevdhltibtm > 0) {
+    if (GetTickCount() - prevdhltibtm > 1000) {
       //expand item!
       TVITEM item;
       item.hItem = hti, item.mask = TVIF_STATE, item.stateMask = TVIS_EXPANDED | TVIS_EXPANDEDONCE;

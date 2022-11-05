@@ -4,14 +4,14 @@
 
 #include <windows.h>
 #include "wince.h"
-#include <winnt.h> // TBYTE
 #include <tchar.h>
 #include <ctype.h>
 #include <commctrl.h>
 
 #include <algorithm>
-#include <unordered_set>
-#include <unordered_map>
+#include <set>
+#include <map>
+#include <vector>
 
 using namespace std;
 
@@ -94,21 +94,8 @@ bool CanDeleteThisKey(const TCHAR *name, bool qConfig);
 
 void GetValueDataString(char*, TCHAR*,int,DWORD);
 
-struct str_equal_to { bool operator()(const TCHAR *x, const TCHAR *y) const { return !_tcscmp(x,y); } };
-struct str_iequal_to { bool operator()(const TCHAR *x, const TCHAR *y) const { return !_tcsicmp(x,y); } };
-struct hash_str { size_t operator()(const TCHAR* s) const {
-  unsigned long h = 0;
-  for ( ; *s; ++s) h = 5 * h + (TBYTE)*s;
-  return size_t(h);
-}};
-struct hash_stri { size_t operator()(const TCHAR* s) const {
-  unsigned long h = 0;
-  for ( ; *s; ++s) h = 5 * h + toupper((TBYTE)*s);
-  return size_t(h);
-}};
-
-template<>
-struct hash<HKEY> { size_t operator()(HKEY h) const { return (size_t)h; } }; //8-)
+struct str_less_than { bool operator()(const TCHAR *x, const TCHAR *y) const { return _tcscmp(x,y) < 0; } };
+struct str_iless_than { bool operator()(const TCHAR *x, const TCHAR *y) const { return _tcsicmp(x,y) < 0; } };
 
 struct confirm_replace_dialog_data {
     const TCHAR *keyname, *oldvalue, *newvalue, *olddata;
@@ -149,9 +136,9 @@ struct HKRootName2Handle_item_type {
   const TCHAR *name;
   RootHandleInfo_type ki;
 };
-typedef unordered_map<const TCHAR*, RootHandleInfo_type, hash_stri, str_iequal_to> n2kmap;
-typedef unordered_map<HKEY, const TCHAR*> k2nmap;
-typedef unordered_map<const TCHAR*, const TCHAR *, hash_stri, str_iequal_to> namap;
+typedef map<const TCHAR*, RootHandleInfo_type, str_iless_than> n2kmap;
+typedef map<HKEY, const TCHAR*> k2nmap;
+typedef map<const TCHAR*, const TCHAR *, str_iless_than> namap;
 extern struct rk_init_s {
   n2kmap n2k;
   k2nmap k2n;

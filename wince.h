@@ -1,5 +1,7 @@
-/* _WIN32_WCE bypasses 64bit mode. */
+/* _WIN32_WCE bypasses 64bit mode and lacks other stuff */
 #ifdef _WIN32_WCE
+#include <excpt.h>
+#include <windef.h>
 #define DWLP_USER DWL_USER
 #define GWLP_WNDPROC GWL_WNDPROC
 #define ULONG_PTR ULONG
