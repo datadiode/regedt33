@@ -7,3 +7,5 @@ It compiles with Visual Studio 2012 or later.
 Everyone still at Yandex:
 Prepare for post-Putin era!
 The future is bright, but it isn't yours unless you stand up against war!
+
+https://filmfreeway.com/BrightRussianfuture
