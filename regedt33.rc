@@ -34,7 +34,7 @@ BEGIN
     POPUP "&Registry"
     BEGIN
         MENUITEM "&Import Registry File ...",   IDM_IMPORTREGFILE
-        MENUITEM "&Export Registry File ...",   IDM_EXPORTREGFILE, GRAYED
+        MENUITEM "&Export Registry File ...",   IDM_EXPORTREGFILE
         MENUITEM SEPARATOR
         MENUITEM "&Connect Network Registry",   IDM_REGISTRY_CONNECT
         MENUITEM "&Disconnect Network Registry", IDM_REGISTRY_DISCONNECT, GRAYED

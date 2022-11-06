@@ -297,6 +297,18 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
       break;
 
     case IDM_EXPORTREGFILE:
+      {
+        achar tname(_T(""));
+        if (!DisplayOFNdlg(tname, _T("Choose .reg - file"), _T("Regedit4 files\0*.reg\0All files\0*.*\0"), true, true)) {
+          const TCHAR *fknt;
+          const TCHAR *fknr = rkeys.ShortName2LongName(currentitem, &fknt);
+          int len = _tcslen(fknr) + _tcslen(fknt) + (*fknt != 0);
+          achar key(len * sizeof(TCHAR));
+          if (*fknt) _stprintf(key.c, _T("%s\\%s"), fknr, fknt);
+          else _tcscpy(key.c, fknr);
+          SaveDump8bit(tname.c, key.c);
+        }
+      }
       break;
 
 #ifndef _WIN32_WCE

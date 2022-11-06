@@ -33,6 +33,9 @@
     <ClCompile Include="srchrpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="regproc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="automgm.h">

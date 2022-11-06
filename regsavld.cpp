@@ -3,6 +3,9 @@
 
 #include "regsavld.h"
 
+BOOL import_registry_file(FILE *reg_file);
+BOOL export_registry_key(const TCHAR *file_name, TCHAR *path, BOOL unicode);
+
 INT_PTR CALLBACK DialogLDH(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
     load_hive_dialog_data *dd;
     switch (msg) {
@@ -327,113 +330,18 @@ TCHAR *gethex(TCHAR *c, DWORD &d) {
 }
 
 int LoadDump8bit(const TCHAR *fname) {
-  FILE *f = _tfopen(fname, _T("r"));
-  FILE *dbgf = 0;//fopen("F:\\mmmm\\Misc\\regedt33\\dbgf.txt", "w");
-  if (!f) {
+  FILE *f = _tfopen(fname, _T("rb"));
+  if (!import_registry_file(f)) {
     MessageBox(MainWindow, fname, _T("Could not read file"), MB_ICONERROR);
     return 1;
   }
-  TCHAR buf[2048], buf_vn[2048];
-  std::vector<unsigned char> buf_vd;
-  bool chkid = true;
-  bool bin_line_cont = false; DWORD type = 0;
-  bool name_set = false;
-  auto_close_hkey hk((HKEY)INVALID_HANDLE_VALUE);
-  while(_fgetts(buf, 2048, f)) {
-    TCHAR *e = chomp(buf);
-    if (chkid) {
-      if (_tcscmp(buf, _T("REGEDIT4"))) {
-        MessageBox(MainWindow, fname, _T("Incorrect file signature"), MB_ICONERROR);
-        return 2;
-      }
-      chkid = false;
-      continue;
-    }
-    if (!*buf) {
-      if (dbgf) _ftprintf(dbgf, _T("CloseKey_NHC\n"));
-      CloseKey_NHC(hk.hk); hk.hk = (HKEY)INVALID_HANDLE_VALUE;
-      continue;
-    }
-    if (*buf == '[') {
-      if (e[-1] != ']') {
-        MessageBox(MainWindow, fname, _T("Incorrect file format"), MB_ICONERROR);
-        return 3;
-      }
-      *--e = 0;
-      TCHAR *keyname = buf + 1;
-      //TranslateKeyName(keyname, );
-      CloseKey_NHC(hk.hk); if (dbgf) _ftprintf(dbgf, _T("CloseKey_NHC\n"));
-      hk.hk = CreateKeyByName(keyname, 0, KEY_WRITE); if (dbgf) _ftprintf(dbgf, _T("CreateKeyByName(%s)\n"), keyname);
-      continue;
-    }
-    if (*buf == '"' || *buf == '@') {
-      TCHAR *c = buf, *v = buf_vn;
-      if (*c != '@') for(c++; *c && *c != '"'; c++) {
-        if (*c == '\\') *v++ = cslashed(*++c);
-        else *v++ = *c;
-      }
-      if (!*c || c[1] != '=') continue;
-      name_set = true;
-      *v = 0;
-      c += 2;
-      buf_vd.clear();
-      DWORD D = 0;
-      bin_line_cont = false; type = 0;
-      switch(*c) {
-      case '"':
-        for(c++; *c && *c != '"'; c++) {
-          if (*c == '\\') buf_vd.push_back(cslashed(*++c));
-          else buf_vd.push_back(*c);
-        }
-        buf_vd.push_back(0);
-        type = 1;
-        break;
-      case 'h':
-        c += 3; type = 3;
-        if (*c == '(') {
-          c++;
-          c = gethex(c, type);
-          if (*c != ')') break;
-          c++;
-        }
-        do {
-          c++;
-          c = gethex(c, D);
-          buf_vd.push_back(static_cast<unsigned char>(D));
-        } while(*c == ',' && isxdigit(c[1]));
-        if (*c == ',' && c[1] == '\\') bin_line_cont = true;
-        break;
-      case 'd':
-        c += 6; buf_vd.resize(4);
-        c = gethex(c, D);
-        *(DWORD*)&buf_vd.front() = D;
-        type = 4;
-        break;
-      }
-      if (bin_line_cont) continue;
-    }
-    if (*buf == ' ' && bin_line_cont) {
-      TCHAR *c = buf;
-      while(*c == ' ' || *c == '\t') c++;
-      bin_line_cont = false;
-      if (!isxdigit((unsigned char)*c)) continue;
-      do {
-        c++; DWORD D;
-        c = gethex(c, D);
-        buf_vd.push_back(static_cast<unsigned char>(D));
-      } while(*c == ',' && isxdigit(c[1]));
-      if (*c == ',' && c[1] == '\\') { bin_line_cont = true; continue; }
-    }
-    if (name_set) {
-      if (dbgf) _ftprintf(dbgf, _T("RegSetValueEx(%s, ..., sz = %zu)\n"), buf_vn, buf_vd.size());
-      RegSetValueEx(hk.hk, buf_vn, NULL, type, (BYTE*)&buf_vd.front(), buf_vd.size());
-      name_set = false;
-    }
+  return 0;
+}
+
+int SaveDump8bit(const TCHAR *fname, TCHAR *key) {
+  if (!export_registry_key(fname, key, FALSE)) {
+    MessageBox(MainWindow, fname, _T("Could not write file"), MB_ICONERROR);
+    return 1;
   }
-  if (ferror(f)) {
-    MessageBox(MainWindow, fname, _T("File read error"), MB_ICONERROR);
-  }
-  fclose(f);
-  if (dbgf) fclose(dbgf);
   return 0;
 }

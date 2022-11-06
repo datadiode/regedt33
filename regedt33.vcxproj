@@ -650,6 +650,7 @@
     <ClCompile Include="keytools.cpp" />
     <ClCompile Include="myctlrs.cpp" />
     <ClCompile Include="regedit.cpp" />
+    <ClCompile Include="regproc.cpp" />
     <ClCompile Include="regsavld.cpp" />
     <ClCompile Include="srchrpl.cpp" />
   </ItemGroup>

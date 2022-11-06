@@ -524,6 +524,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="regproc.cpp"
+				>
+			</File>
+			<File
 				RelativePath="regsavld.cpp"
 				>
 				<FileConfiguration
