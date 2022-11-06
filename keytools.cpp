@@ -423,31 +423,33 @@ int CopyKey(const TCHAR *src,const TCHAR *dst,const TCHAR *act) {
 }
 
 int DeleteAllSubkeys(HKEY src) {
-  int ec=1;
+  int ec = 1;
   HKEY src1;
-  DWORD cknl,ccnl, tnl,tcl;
-  BYTE *cknb,*ccnb;
+  DWORD cknl, ccnl, tnl, tcl;
+  TCHAR *cknb, *ccnb;
   FILETIME lwt;
-  if (RegQueryInfoKey(src,NULL,NULL,NULL,NULL,&cknl,&ccnl,NULL,NULL,NULL,NULL,NULL)!=ERROR_SUCCESS) {
-	//todo: error msg
-	return 0;
+  if (RegQueryInfoKey(src, NULL, NULL, NULL, NULL, &cknl, &ccnl, NULL, NULL, NULL, NULL, NULL) != ERROR_SUCCESS) {
+    //todo: error msg
+    return 0;
   }
-  cknb=(BYTE*)malloc(++cknl); ccnb=(BYTE*)malloc(++ccnl);
-  tnl=cknl, tcl=ccnl;
+  cknb = (TCHAR*)malloc(++cknl * sizeof(TCHAR)); ccnb = (TCHAR*)malloc(++ccnl * sizeof(TCHAR));
+  tnl = cknl;
+  tcl = ccnl;
   int skid = 0;
-  while(RegEnumKeyEx(src,skid,(TCHAR*)cknb,&tnl,NULL,(TCHAR*)ccnb,&tcl,&lwt)==ERROR_SUCCESS) {
-	if (RegOpenKeyEx(src,(LPCTSTR)cknb,0,
-		KEY_CREATE_SUB_KEY | KEY_READ,&src1)==ERROR_SUCCESS) {
-	  ec|=DeleteAllSubkeys(src1);
-	  CloseKey_NHC(src1);
-	  if (RegDeleteKey(src,(LPCTSTR)cknb)) skid++;
+  while (RegEnumKeyEx(src, skid, cknb, &tnl, NULL, ccnb, &tcl, &lwt) == ERROR_SUCCESS) {
+    if (RegOpenKeyEx(src, cknb, 0, KEY_CREATE_SUB_KEY | KEY_READ, &src1) == ERROR_SUCCESS) {
+      ec |= DeleteAllSubkeys(src1);
+      CloseKey_NHC(src1);
+      if (RegDeleteKey(src, cknb) != ERROR_SUCCESS) skid++;
     } else { 
       if (ec & 2) skid++;
-      ec|=2;
+      ec |= 2;
     }
-	tnl=cknl, tcl=ccnl;
+    tnl = cknl;
+    tcl = ccnl;
   }
-  free(cknb); free(ccnb);
+  free(cknb);
+  free(ccnb);
   return ec;
 }
 
