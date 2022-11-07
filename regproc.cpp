@@ -1029,16 +1029,17 @@ cleanup:
 
 static TCHAR *get_lineW(FILE *fp)
 {
+    static TCHAR *lineA;
     static size_t size;
-    static TCHAR *buf, *next;
-    TCHAR *line;
+    static WCHAR *buf, *next;
+    WCHAR *line;
 
     if (!fp) goto cleanup;
 
     if (!size)
     {
         size = REG_VAL_BUF_SIZE;
-        buf = (TCHAR *)malloc(size * sizeof(TCHAR));
+        buf = (WCHAR *)malloc(size * sizeof(WCHAR));
         *buf = 0;
         next = buf;
     }
@@ -1046,21 +1047,26 @@ static TCHAR *get_lineW(FILE *fp)
 
     while (next)
     {
-        TCHAR *p = _tcspbrk(line, _T("\r\n"));
+        WCHAR *p = wcspbrk(line, L"\r\n");
         if (!p)
         {
             size_t len, count;
-            len = _tcslen(next);
-            memmove(buf, next, (len + 1) * sizeof(TCHAR));
+            len = wcslen(next);
+            memmove(buf, next, (len + 1) * sizeof(WCHAR));
             if (size - len < 3)
             {
                 size *= 2;
-                buf = (TCHAR *)realloc(buf, size * sizeof(TCHAR));
+                buf = (WCHAR *)realloc(buf, size * sizeof(WCHAR));
             }
-            if (!(count = fread(buf + len, sizeof(TCHAR), size - len - 1, fp)))
+            if (!(count = fread(buf + len, sizeof(WCHAR), size - len - 1, fp)))
             {
                 next = NULL;
-                return buf;
+#ifdef _UNICODE
+                lineA = buf;
+#else
+                lineA = GetMultiByteString(buf);
+#endif
+                return lineA;
             }
             buf[len + count] = 0;
             next = buf;
@@ -1070,7 +1076,12 @@ static TCHAR *get_lineW(FILE *fp)
         next = p + 1;
         if (*p == '\r' && *(p + 1) == '\n') next++;
         *p = 0;
-        return line;
+#ifdef _UNICODE
+        lineA = line;
+#else
+        lineA = GetMultiByteString(line);
+#endif
+        return lineA;
     }
 
 cleanup:
