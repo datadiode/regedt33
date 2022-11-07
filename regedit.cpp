@@ -289,8 +289,8 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     case IDM_IMPORTREGFILE:
       {
         achar tname(_T(""));
-        if (!DisplayOFNdlg(tname, _T("Choose .reg - file"), _T("Regedit4 files\0*.reg\0All files\0*.*\0"))) {
-          LoadDump8bit(tname.c);
+        if (DisplayOFNdlg(tname, _T("Choose .reg - file"), _T("Regedit files\0*.reg\0All files\0*.*\0"))) {
+          LoadDump(tname.c);
           SendMessage(hwnd,WM_COMMAND,340,0);
         }
       }
@@ -299,14 +299,14 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     case IDM_EXPORTREGFILE:
       {
         achar tname(_T(""));
-        if (!DisplayOFNdlg(tname, _T("Choose .reg - file"), _T("Regedit4 files\0*.reg\0All files\0*.*\0"), true, true)) {
+        if (int choice = DisplayOFNdlg(tname, _T("Choose .reg - file"), _T("Regedit4 files\0*.reg\0Regedit5 files\0*.reg\0"), true, true)) {
           const TCHAR *fknt;
           const TCHAR *fknr = rkeys.ShortName2LongName(currentitem, &fknt);
           int len = _tcslen(fknr) + _tcslen(fknt) + (*fknt != 0);
           achar key(len * sizeof(TCHAR));
           if (*fknt) _stprintf(key.c, _T("%s\\%s"), fknr, fknt);
           else _tcscpy(key.c, fknr);
-          SaveDump8bit(tname.c, key.c);
+          SaveDump(tname.c, key.c, choice == 2);
         }
       }
       break;
@@ -474,7 +474,6 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
           RegCloseKey(hk);
           hfc = TreeView_GetNextSibling(TreeW, hfc);
         }
-        if (hfc || n < 7) MessageBox(0, _T("????"), _T("340"), MB_OK);
       }
 	  break;
 

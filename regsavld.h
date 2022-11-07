@@ -6,8 +6,8 @@ INT_PTR CALLBACK DialogSVK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
 INT_PTR CALLBACK DialogLDK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
 INT_PTR CALLBACK DialogRplK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
 
-int LoadDump8bit(const TCHAR *fname);
-int SaveDump8bit(const TCHAR *fname, TCHAR *key);
+int LoadDump(const TCHAR *fname);
+int SaveDump(const TCHAR *fname, TCHAR *key, BOOL unicode);
 
 struct load_hive_dialog_data {
   const TCHAR *root_key_name;
