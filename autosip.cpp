@@ -27,5 +27,5 @@ static struct sipapi {
 } const sipapi = {
   GetModuleHandle(L"COREDLL.DLL"),
   GetProcAddress(sipapi.h, L"SipShowIM"),
-  SetTimer(NULL, 0, 500, sipapi::TimerProc)
+  *sipapi.SipShowIM ? SetTimer(NULL, 0, 500, sipapi::TimerProc) : 0
 };

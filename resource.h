@@ -104,15 +104,12 @@
 #define IDM_DEBUG_MOVE                  40004
 #define IDM_DEBUG_COPY                  40005
 #define IDM_SEARCHREPLACE               40006
-#define ID_REGISTRY_IMPORTREGISTRYFILE  40007
 #define IDM_IMPORTREGFILE               40007
-#define ID_REGISTRY_EXPORTREGISTRYFILE  40008
 #define IDM_EXPORTREGFILE               40008
 #define IDM_REGISTRY_CONNECT            40009
 #define IDM_REGISTRY_DISCONNECT         40010
 #define ID_EDIT_SAVEKEYTOFILE           40012
 #define ID_EDIT_LOADKEYFROMFILE         40013
-#define ID_EDIT_FINDNEXT                40014
 #define IDM_FINDNEXT                    40014
 #define ID_REGISTRY_LOADHIVE            40015
 #define IDM_REGISTRY_LOADHIVE           40015
