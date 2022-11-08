@@ -111,9 +111,7 @@
 #define ID_EDIT_SAVEKEYTOFILE           40012
 #define ID_EDIT_LOADKEYFROMFILE         40013
 #define IDM_FINDNEXT                    40014
-#define ID_REGISTRY_LOADHIVE            40015
 #define IDM_REGISTRY_LOADHIVE           40015
-#define ID_REGISTRY_UNLOADHIVE          40016
 #define IDM_REGISTRY_UNLOADHIVE         40016
 #define ID_EDIT_REPLACEKEY              40018
 #define IDM_FAV_GOTO                    40019

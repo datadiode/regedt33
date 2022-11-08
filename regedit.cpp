@@ -351,7 +351,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
       break;
     }
 
-    case ID_REGISTRY_LOADHIVE: {
+    case IDM_REGISTRY_LOADHIVE: {
         load_hive_dialog_data d;
         achar ci = currentitem;
         TCHAR *c = _tcschr(ci.c, '\\'); if (c) *c = 0;
@@ -555,7 +555,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             else _tcscpy(c, currentitem);
             GlobalUnlock(g);
             EmptyClipboard();
-            SetClipboardData(CF_UNICODETEXT, g);
+            SetClipboardData(sizeof(TCHAR) == sizeof(WCHAR) ? CF_UNICODETEXT : CF_TEXT, g);
           }
         }
         CloseClipboard(); 
