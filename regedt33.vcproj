@@ -380,6 +380,10 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
+				RelativePath="autosip.cpp"
+				>
+			</File>
+			<File
 				RelativePath="editdlg.cpp"
 				>
 				<FileConfiguration

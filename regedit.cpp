@@ -27,7 +27,8 @@ INT_PTR CALLBACK DialogDcR(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
 INT_PTR CALLBACK DialogGotoKey(HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK DialogAddFavKey(HWND,UINT,WPARAM,LPARAM);
 
-void AddFavoritesToMenu(HMENU menu);
+void AddFavoritesToMenu(HMENU);
+void AddSelCommandsToMenu(HWND, HMENU);
 void CheckDisconnRemoteMenuState();
 void DoSearchAndReplace(HWND, bool, bool);
 void DoSearchAndReplaceNext(HWND hwnd);
@@ -39,8 +40,6 @@ void KeyAskMoveOrCopy(HWND hwnd, int mvflag, const TCHAR *dst);
 void ValuesContinueDrag(HWND hwnd, LPARAM lParam);
 void ValuesEndDrag(HWND hwnd, bool is_ok);
 
-void GetLWHit(LVHITTESTINFO*);
-void GetTWHit(TVHITTESTINFO*);
 HMENU TypeMenu(DWORD,int,DWORD);
 int GetTypeMnuNo(DWORD);
 DWORD GetMinRegValueSize(DWORD);
@@ -60,7 +59,7 @@ bool co_initialized = false;
 volatile bool rr_connecting = false;
 #endif
 
-int xw=10,yw=10,dxw=600,dyw=400,xTree=150,xName=150,xData=400;
+int dxw=600, dyw=400, xTree=150, xName=150, xData=400, xSplitBar=10;
 bool sDat=0, sVal=0, sKeys=0, sMatch=0;
 DWORD Settings[16];
 DWORD SbarHeight;
@@ -76,7 +75,7 @@ HTREEITEM currentitem_tv=NULL;
 HBITMAP img_up,img_down;
 HFONT Cour12;
 HPEN ThickPen;
-HMENU theFavMenu = NULL, theFileMenu = NULL, theEditMenu = NULL;
+HMENU theFavMenu = NULL, theSelMenu = NULL, theFileMenu = NULL, theEditMenu = NULL;
 struct favitem_t { TCHAR *name, *key, *value, *comment; };
 static vector<favitem_t> favItems;
 #define REFAVPATH _T("Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit\\Favorites")
@@ -194,6 +193,7 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   HMENU theMenu = GetMenu(hwnd);
 #endif
   theFavMenu = GetSubMenu(theMenu, 3);
+  theSelMenu = GetSubMenu(theMenu, 4);
   theFileMenu = GetSubMenu(theMenu, 0);
   theEditMenu = GetSubMenu(theMenu, 1);
 
@@ -230,9 +230,11 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
   TCHAR *s,ss[40];
   HKEY hk;
   RECT rc;
+  DWORD mp;
+  POINT pt;
   TVINSERTSTRUCT tvins;
   LVCOLUMN lvcol;
-  HMENU pum,mn1;
+  HMENU pum;
 
   switch (msg) {
   case WM_CHAR:
@@ -479,7 +481,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 	case 320:
 	  if (!ListView_GetSelectedCount(ListW)) break;
-	  i=ListView_GetNextItem(ListW,-1,/*LVNI_BELOW |*/ LVNI_FOCUSED);
+	  i = ListView_GetNextItem(ListW, -1, LVNI_FOCUSED);
 	  goto e201dbl;
 	  break;
 
@@ -493,7 +495,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	  }
 	  break;
 	case 322://Rename value
-	  k=ListView_GetNextItem(ListW,-1,LVNI_FOCUSED);
+	  k = ListView_GetNextItem(ListW, -1, LVNI_FOCUSED);
 	  if (k>=0) ListView_EditLabel(ListW,k);
 	  break;
 
@@ -624,19 +626,23 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 	case 351:case 352:case 353:case 354:case 355:case 356:case 357:
 	case 358:case 359:case 360:case 361:case 362:
-	  if (currentitem && lParam) {//Change value type: lParam=name
-		TCHAR *vn,*name=(TCHAR*)lParam;
-		char *vd,*vdp;
+	  if (currentitem) {
+		if (!ListView_GetSelectedCount(ListW)) break;
+		i = ListView_GetNextItem(ListW, -1, LVNI_FOCUSED);
+		fchar name;
+		DWORD ns=0;
+		GetLVItemText(ListW, i, name.c, ns);
+		TCHAR *vn,*vdp;
+		char *vd;
 		DWORD vknl,vkdl,type;
-		LVFINDINFO finf;
 		LVITEM item;
 		hk=GetKeyByName(currentitem,KEY_QUERY_VALUE | KEY_SET_VALUE);
 		if ((HANDLE)hk==INVALID_HANDLE_VALUE) return 0;
 		if (RegQueryInfoKey(hk,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 		  &vknl,&vkdl,NULL,NULL)!=ERROR_SUCCESS) return 0;
 		vn=(TCHAR*)malloc((++vknl+20) * sizeof(TCHAR)); vd=(char*)malloc(++vkdl+1);
-		if (RegQueryValueEx(hk,name,NULL,&type,(BYTE*)vd,&vkdl)!=ERROR_SUCCESS ||
-			RegSetValueEx(hk,name,NULL,
+		if (RegQueryValueEx(hk,name.c,NULL,&type,(BYTE*)vd,&vkdl)!=ERROR_SUCCESS ||
+			RegSetValueEx(hk,name.c,NULL,
 			type=GetRegValueType(LOWORD(wParam)-350,type),
 			(BYTE*)vd,vkdl)!=ERROR_SUCCESS) {
 		  RegCloseKey(hk);
@@ -646,18 +652,14 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		}
 		SetFocus(ListW);
 		RegCloseKey(hk);
-		finf.flags=LVFI_STRING, finf.psz=name;
-		n=ListView_FindItem(ListW,-1,&finf);
-		vdp=(char*)malloc(max((int)vkdl*3,32));
-		if (n>=0) {
-		  item.iItem=n, item.mask=LVIF_IMAGE, item.iSubItem=0;
-		  item.stateMask=0, item.iImage=ValueTypeIcon(type);
-		  ListView_SetItem(ListW,&item);
-		  GetValueDataString(vd,(TCHAR*)vdp,vkdl,type);
-		  item.mask=LVIF_TEXT, item.iSubItem=1;
-		  item.pszText=(TCHAR*)vdp;
-		  ListView_SetItem(ListW,&item);
-		}
+		vdp=(TCHAR*)malloc(max<int>(vkdl*3,32));
+		item.iItem=i, item.mask=LVIF_IMAGE, item.iSubItem=0;
+		item.stateMask=0, item.iImage=ValueTypeIcon(type);
+		ListView_SetItem(ListW,&item);
+		GetValueDataString(vd,vdp,vkdl,type);
+		item.mask=LVIF_TEXT, item.iSubItem=1;
+		item.pszText=vdp;
+		ListView_SetItem(ListW,&item);
 		free(vn); free(vd); free(vdp);
 	  }
 	  break;
@@ -746,6 +748,10 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
   case WM_INITMENUPOPUP:
     if ((HMENU)wParam == theFavMenu) {
       AddFavoritesToMenu((HMENU)wParam);
+      return 0;
+    }
+    if ((HMENU)wParam == theSelMenu) {
+      AddSelCommandsToMenu(GetFocus(), (HMENU)wParam);
       return 0;
     }
     break;
@@ -976,7 +982,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case NM_RETURN:
 	  if (k!=201) break;
 	  if (!ListView_GetSelectedCount(ListW)) break;
-	  i=ListView_GetNextItem(ListW,-1,/*LVNI_BELOW |*/ LVNI_FOCUSED);
+	  i = ListView_GetNextItem(ListW, -1, LVNI_FOCUSED);
 	  goto e201dbl;
 	case NM_DBLCLK:
 	  if (k==201) {
@@ -1002,102 +1008,26 @@ e201dbl:
 	  break;
 
 	case NM_RCLICK:
+	  mp = GetMessagePos();
+	  POINTSTOPOINT(pt, mp);
 	  if (k==200) {
 		TVHITTESTINFO hti;
-		int CanCreate=0, CanChange,cnc;
-		GetTWHit(&hti);
-		DWORD mp=GetMessagePos();
+		hti.pt = pt;
+		ScreenToClient(TreeW, &hti.pt);
+		TreeView_HitTest(TreeW, &hti);
 		if (hti.flags & TVHT_ONITEM) {
-		  s=GetKeyNameByItem(TreeW,currentitem_tv=hti.hItem);//Just for the case
-		  if (currentitem) free(currentitem);
-		  currentitem=s;
-		  TreeView_SelectItem(TreeW,hti.hItem);
-		  HKEY hk=GetKeyByName(currentitem,KEY_QUERY_VALUE | KEY_SET_VALUE);
-		  if ((HANDLE)hk==INVALID_HANDLE_VALUE) {
-			hk=GetKeyByName(currentitem,KEY_QUERY_VALUE);
-			if ((HANDLE)hk==INVALID_HANDLE_VALUE) break; //Crash
-			CanChange=0;
-		  } else CanChange=1;
-		  pum=CreatePopupMenu();
-		  cnc=CanChange?0:MF_GRAYED;
-		  CanCreate=cnc;//!?
-		  tvins.item.hItem=hti.hItem, tvins.item.mask=TVIF_CHILDREN | TVIF_STATE;
-		  tvins.item.stateMask=TVIS_EXPANDED | TVIS_EXPANDEDONCE;
-		  TreeView_GetItem(TreeW,&tvins.item);
-		  AppendMenu(pum,tvins.item.cChildren ? MF_ENABLED : MF_GRAYED,
-		      330-((tvins.item.state&TVIS_EXPANDED)!=0),
-		      (tvins.item.state & TVIS_EXPANDED) ? _T("Collapse") : _T("Expand"));
-#ifndef _WIN32_WCE
-		  SetMenuDefaultItem(pum, 0, MF_BYPOSITION);
-#endif
-		  mn1=TypeMenu(300,0,CanCreate);
-		  AppendMenu(pum,MF_POPUP,(UINT_PTR)mn1,_T("&New"));
-		  AppendMenu(pum,MF_STRING | cnc,331,_T("&Find..."));
-		  AppendMenu(pum,MF_SEPARATOR,-1,_T(""));
-		  AppendMenu(pum,MF_STRING | cnc,332,_T("&Delete"));
-		  AppendMenu(pum,MF_STRING | cnc,333,_T("&Rename"));
-		  AppendMenu(pum,MF_STRING | cnc,334,_T("&Move to..."));
-		  AppendMenu(pum,MF_STRING,335,_T("Cop&y to..."));
-		  AppendMenu(pum,MF_SEPARATOR,-1,_T(""));
-		  AppendMenu(pum,MF_STRING,336,_T("&Copy key name (full)"));
-		  AppendMenu(pum,MF_STRING,337,_T("Copy key name (&short)"));
-		  cnc=TrackPopupMenu(pum,TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD | TPM_RIGHTBUTTON,
-			LOWORD(mp),HIWORD(mp),0,hwnd,NULL);
+		  TreeView_SelectItem(TreeW, hti.hItem);
+		  pum = CreatePopupMenu();
+		  AddSelCommandsToMenu(TreeW, pum);
+		  TrackPopupMenu(pum, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
 		  DestroyMenu(pum);
-		  RegCloseKey(hk);
-		  if (cnc) SendMessage(hwnd,WM_COMMAND,cnc,0);
 		}
 	  } else if (k==201) {
-		LVHITTESTINFO hti;
-		GetLWHit(&hti);
-		DWORD mp=GetMessagePos(),type,type_n,ns;
-		int CanCreate=MF_GRAYED*0, CanChange,cnc;
-		TCHAR *name=NULL;
 		if (currentitem) {
-		  HKEY hk=GetKeyByName(currentitem,KEY_QUERY_VALUE | KEY_SET_VALUE);
-		  if ((HANDLE)hk==INVALID_HANDLE_VALUE) {
-			hk=GetKeyByName(currentitem,KEY_QUERY_VALUE);
-			if ((HANDLE)hk==INVALID_HANDLE_VALUE) break; //Crash
-			CanChange=0;
-		  } else CanChange=1;
-		  if (RegQueryInfoKey(hk,NULL,NULL,NULL,NULL,NULL,NULL,NULL,&ns,NULL,NULL,NULL)!=
-			ERROR_SUCCESS) {
-			RegCloseKey(hk);
-			break;
-		  }
-		  pum=CreatePopupMenu();
-		  cnc=CanChange?0:MF_GRAYED;
-		  CanCreate=cnc;//!?
-		  if (hti.flags & LVHT_ONITEM) {
-			HMENU mn2;
-			name=(TCHAR*)malloc((ns+=30) * sizeof(TCHAR)); *name=0;
-			ListView_GetItemText(ListW,hti.iItem,0,name,ns);
-			RegQueryValueEx(hk,name,NULL,&type,NULL,NULL);
-			type_n=GetTypeMnuNo(type);
-			mn2=TypeMenu(350,type_n,cnc);
-			AppendMenu(pum,MF_STRING,320,_T("&Modify"));
-#ifndef _WIN32_WCE
-			SetMenuDefaultItem(pum, 0, MF_BYPOSITION);
-#endif
-			AppendMenu(pum,MF_POPUP,(UINT_PTR)mn2,_T("&Change Type"));
-			AppendMenu(pum,MF_SEPARATOR,-1,_T(""));
-			AppendMenu(pum,MF_STRING | cnc,321,_T("&Delete"));
-			AppendMenu(pum,MF_STRING | cnc,322,_T("&Rename"));
-			AppendMenu(pum,MF_STRING | cnc,323,_T("Move &to..."));
-			AppendMenu(pum,MF_STRING,324,_T("Cop&y to..."));
-			AppendMenu(pum,MF_SEPARATOR,-1,_T(""));
-			mn1=TypeMenu(300,0,CanCreate);
-			AppendMenu(pum,MF_POPUP,(UINT_PTR)mn1,_T("&New"));
-		  } else {
-			mn1=TypeMenu(300,0,CanCreate);
-			AppendMenu(pum,MF_POPUP,(UINT_PTR)mn1,_T("&New"));
-		  }
-		  cnc=TrackPopupMenu(pum,TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD | TPM_RIGHTBUTTON,
-			LOWORD(mp),HIWORD(mp),0,hwnd,NULL);
+		  pum = CreatePopupMenu();
+		  AddSelCommandsToMenu(ListW, pum);
+		  TrackPopupMenu(pum, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
 		  DestroyMenu(pum);
-		  RegCloseKey(hk);
-		  if (cnc) SendMessage(hwnd,WM_COMMAND,cnc,(LPARAM)name);
-		  if (name) free(name);
 		}
 	  }
 	  return 0;
@@ -1121,9 +1051,9 @@ e201dbl:
 	default: return 0;
     } // end of WM_NOTIFY
 	break;
-	
+
   case WM_LBUTTONDOWN:
-    if (wParam==MK_LBUTTON && LOWORD(lParam)>=xTree && LOWORD(lParam)<xTree+3) {
+    if (wParam==MK_LBUTTON && LOWORD(lParam)>=xTree && LOWORD(lParam)<xTree+xSplitBar) {
       onWpos=true,xWpos=LOWORD(lParam)-xTree;
       SetCapture(hwnd);
     }
@@ -1137,10 +1067,10 @@ e201dbl:
     if (onWpos) {
       onWpos=false;
       ReleaseCapture();
-      if (LOWORD(lParam)>5 && LOWORD(lParam)<dxw-5) {
-        xTree=LOWORD(lParam)+xWpos;
+      if (LOWORD(lParam)-xWpos>5 && LOWORD(lParam)-xWpos+xSplitBar<dxw-5) {
+        xTree=LOWORD(lParam)-xWpos;
         SetWindowPos(TreeW,HWND_TOP,0,CbarHeight,min(dxw,xTree),dyw-SbarHeight-CbarHeight,0);
-        SetWindowPos(ListW,HWND_TOP,xTree+3,CbarHeight,dxw-xTree-3,dyw-SbarHeight-CbarHeight,0);
+        SetWindowPos(ListW,HWND_TOP,xTree+xSplitBar,CbarHeight,dxw-xTree-xSplitBar,dyw-SbarHeight-CbarHeight,0);
       }
     }
     if (is_dragging) ValuesEndDrag(hwnd, true);
@@ -1157,23 +1087,21 @@ e201dbl:
       ttmsg.time = GetMessageTime();
       SendMessage(hwndToolTip, TTM_RELAYEVENT, 0, (LPARAM)&ttmsg);
     }
-    if (onWpos && LOWORD(lParam)>5 && LOWORD(lParam)<dxw-5) {
-      int xtr1 = LOWORD(lParam)+xWpos;
-      if (xTree == xtr1) { Sleep(1); break; }
-      xTree = xtr1;
+    if (onWpos && LOWORD(lParam)-xWpos>5 && LOWORD(lParam)-xWpos+xSplitBar<dxw-5) {
+      xTree=LOWORD(lParam)-xWpos;
       SetWindowPos(TreeW,HWND_TOP,0,CbarHeight,min(dxw,xTree),dyw-SbarHeight-CbarHeight,0);
-      SetWindowPos(ListW,HWND_TOP,xTree+3,CbarHeight,dxw-xTree-3,dyw-SbarHeight-CbarHeight,0);
+      SetWindowPos(ListW,HWND_TOP,xTree+xSplitBar,CbarHeight,dxw-xTree-xSplitBar,dyw-SbarHeight-CbarHeight,0);
     }
     if (is_dragging) {
       ValuesContinueDrag(hwnd, lParam);
     }
     break;
-	  
+
   case WM_SIZE:
     SendMessage(SbarW,WM_SIZE,wParam,lParam);
     dxw=LOWORD(lParam),dyw=HIWORD(lParam);
     SetWindowPos(TreeW,HWND_TOP,0,CbarHeight,min(dxw,xTree),dyw-SbarHeight-CbarHeight,0);
-    SetWindowPos(ListW,HWND_TOP,xTree+3,CbarHeight,dxw-xTree-3,dyw-SbarHeight-CbarHeight,0);
+    SetWindowPos(ListW,HWND_TOP,xTree+xSplitBar,CbarHeight,dxw-xTree-xSplitBar,dyw-SbarHeight-CbarHeight,0);
     //if (wParam==SIZE_MINIMIZED) ShowWindow(hwnd,SW_HIDE);
     break;
     
@@ -1185,10 +1113,10 @@ e201dbl:
     if (onWpos) onWpos = false;
     if (is_dragging) ValuesEndDrag(hwnd, false);
     break;
-    
+
   default:
     return DefWindowProc (hwnd,msg,wParam,lParam);
-	  
+
   }
   return 0;
 }
@@ -1379,21 +1307,6 @@ void LoadSettings() {
 	//xTree=Settings[11], xName=Settings[12], xData=Settings[13];
 
 	RegCloseKey(MainKey);
-}
-
-void GetLWHit(LVHITTESTINFO *pinfo) {
-	DWORD dd=GetMessagePos();
-	RECT r1;
-	GetWindowRect(ListW,&r1);
-	pinfo->pt.x=LOWORD(dd)-r1.left;pinfo->pt.y=HIWORD(dd)-r1.top-GetSystemMetrics(SM_CYEDGE);
-	SendMessage(ListW,LVM_HITTEST,0,(LPARAM)pinfo);
-}
-void GetTWHit(TVHITTESTINFO *pinfo) {
-	DWORD dd=GetMessagePos();
-	RECT r1;
-	GetWindowRect(TreeW,&r1);
-	pinfo->pt.x=LOWORD(dd)-r1.left;pinfo->pt.y=HIWORD(dd)-r1.top-GetSystemMetrics(SM_CYEDGE);
-	SendMessage(TreeW,TVM_HITTEST,0,(LPARAM)pinfo);
 }
 
 HMENU TypeMenu(DWORD p,int key,DWORD disable) {
@@ -2517,6 +2430,71 @@ void AddFavoritesToMenu(HMENU menu) {
     }
   }
   RegCloseKey(hk);
+}
+
+void AddSelCommandsToMenu(HWND hwnd, HMENU pum) {
+  while (RemoveMenu(pum, 0, MF_BYPOSITION)); //clear the menu
+  DWORD cnc = MF_ENABLED;
+  HKEY hk = GetKeyByName(currentitem, KEY_QUERY_VALUE | KEY_SET_VALUE);
+  if ((HANDLE)hk == INVALID_HANDLE_VALUE) {
+    hk = GetKeyByName(currentitem, KEY_QUERY_VALUE);
+    if ((HANDLE)hk == INVALID_HANDLE_VALUE) return; //Crash
+    cnc = MF_GRAYED;
+  }
+  if (hwnd == TreeW) {
+    TVITEM item;
+    item.hItem = TreeView_GetSelection(TreeW);
+    item.mask = TVIF_CHILDREN | TVIF_STATE;
+    item.stateMask = TVIS_EXPANDED | TVIS_EXPANDEDONCE;
+    TreeView_GetItem(TreeW, &item);
+    AppendMenu(pum, item.cChildren ? MF_ENABLED : MF_GRAYED,
+        330 - ((item.state & TVIS_EXPANDED) !=0 ),
+        (item.state & TVIS_EXPANDED) ? _T("Collapse") : _T("Expand"));
+    HMENU mn1 = TypeMenu(300, 0, cnc);
+    AppendMenu(pum, MF_POPUP, (UINT_PTR)mn1, _T("&New"));
+    AppendMenu(pum, MF_STRING | cnc, 331, _T("&Find..."));
+    AppendMenu(pum, MF_SEPARATOR, -1, _T(""));
+    AppendMenu(pum, MF_STRING | cnc, 332, _T("&Delete"));
+    AppendMenu(pum, MF_STRING | cnc, 333, _T("&Rename"));
+    AppendMenu(pum, MF_STRING | cnc, 334, _T("&Move to..."));
+    AppendMenu(pum, MF_STRING, 335, _T("Cop&y to..."));
+    AppendMenu(pum, MF_SEPARATOR, -1, _T(""));
+    AppendMenu(pum, MF_STRING, 336, _T("&Copy key name (full)"));
+    AppendMenu(pum, MF_STRING, 337, _T("Copy key name (&short)"));
+#ifndef _WIN32_WCE
+    SetMenuDefaultItem(pum, 0, MF_BYPOSITION);
+#endif
+  } else if (hwnd == ListW) {
+    DWORD type, ns;
+    if (RegQueryInfoKey(hk,NULL,NULL,NULL,NULL,NULL,NULL,NULL,&ns,NULL,NULL,NULL)!= ERROR_SUCCESS) {
+      RegCloseKey(hk);
+      return;
+    }
+    if (ListView_GetSelectedCount(ListW)) {
+      TCHAR *name = (TCHAR*)malloc((ns += 30) * sizeof(TCHAR));
+      *name = 0;
+      int i = ListView_GetNextItem(ListW, -1, LVNI_FOCUSED);
+      ListView_GetItemText(ListW, i, 0, name, ns);
+      RegQueryValueEx(hk, name, NULL, &type, NULL, NULL);
+      free(name);
+      int type_n = GetTypeMnuNo(type);
+      HMENU mn2 = TypeMenu(350, type_n, cnc);
+      AppendMenu(pum, MF_STRING, 320, _T("&Modify"));
+      AppendMenu(pum, MF_POPUP, (UINT_PTR)mn2, _T("&Change Type"));
+      AppendMenu(pum, MF_SEPARATOR, -1, _T(""));
+      AppendMenu(pum, MF_STRING | cnc, 321, _T("&Delete"));
+      AppendMenu(pum, MF_STRING | cnc, 322, _T("&Rename"));
+      AppendMenu(pum, MF_STRING | cnc, 323, _T("Move &to..."));
+      AppendMenu(pum, MF_STRING, 324, _T("Cop&y to..."));
+      AppendMenu(pum, MF_SEPARATOR, -1, _T(""));
+#ifndef _WIN32_WCE
+      SetMenuDefaultItem(pum, 0, MF_BYPOSITION);
+#endif
+    }
+    HMENU mn1 = TypeMenu(300, 0, cnc);
+    AppendMenu(pum, MF_POPUP, (UINT_PTR)mn1, _T("&New"));
+  }
+  CloseKey_NHC(hk);
 }
 
 const int MAX_KEY_TITLE_LEN = 24;

@@ -69,6 +69,10 @@ BEGIN
         MENUITEM "&Revise favorites",           IDM_FAV_EDIT
         MENUITEM SEPARATOR
     END
+    POPUP "&Selection"
+    BEGIN
+        MENUITEM SEPARATOR
+    END
     POPUP "&Help"
     BEGIN
         MENUITEM "&About",                      IDM_ABOUT
