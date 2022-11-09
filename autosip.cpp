@@ -15,7 +15,10 @@ static struct sipapi {
     static HWND static_focus = NULL;
     static DWORD static_flag = SIPF_OFF;
     HWND const focus = GetFocus();
-    DWORD const flag = HideCaret(NULL) && ShowCaret(NULL) ? SIPF_ON : SIPF_OFF;
+    DWORD const flag = focus && (
+      (SendMessage(focus, WM_GETDLGCODE, 0, 0) & DLGC_HASSETSEL) >
+      (GetWindowLong(focus, GWL_STYLE) & ES_READONLY)
+    ) ? SIPF_ON : SIPF_OFF;
     if (static_focus != focus || static_flag != flag) {
       static_focus = focus;
       (*::sipapi.SipShowIM)(static_flag = flag);
