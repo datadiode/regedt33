@@ -35,12 +35,14 @@ BEGIN
     BEGIN
         MENUITEM "&Import Registry File ...",   IDM_IMPORTREGFILE
         MENUITEM "&Export Registry File ...",   IDM_EXPORTREGFILE
+#ifndef _WIN32_WCE
         MENUITEM SEPARATOR
         MENUITEM "&Connect Network Registry",   IDM_REGISTRY_CONNECT
         MENUITEM "&Disconnect Network Registry", IDM_REGISTRY_DISCONNECT, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Load Hive",                  IDM_REGISTRY_LOADHIVE
         MENUITEM "&Unload Hive",                IDM_REGISTRY_UNLOADHIVE
+#endif
         MENUITEM SEPARATOR
         MENUITEM "&Settings",                   IDM_SETTINGS
         MENUITEM SEPARATOR
@@ -53,10 +55,12 @@ BEGIN
         MENUITEM "&Find\t^F",                   IDM_EDIT_FIND
         MENUITEM "Find Ne&xt\tF3",              IDM_FINDNEXT
         MENUITEM "Search + &Replace\t^H",       IDM_SEARCHREPLACE
+#ifndef _WIN32_WCE
         MENUITEM SEPARATOR
         MENUITEM "&Save key to file",           ID_EDIT_SAVEKEYTOFILE
         MENUITEM "&Load key from file",         ID_EDIT_LOADKEYFROMFILE
         MENUITEM "RegReplaceKey",               ID_EDIT_REPLACEKEY, GRAYED
+#endif
     END
     POPUP "&View"
     BEGIN
@@ -232,13 +236,13 @@ BEGIN
                     NOT WS_VISIBLE | WS_TABSTOP,226,31,49,10
 END
 
-ABOUT DIALOG DISCARDABLE  0, 0, 185, 119
+ABOUT DIALOG DISCARDABLE  0, 0, 185, 93
 STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Advanced Regedit"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,68,71,50,14
-    CTEXT           "© 2003-2022 by Alexander Melkov et al.",IDC_STATIC,32,16,137,9
+    CTEXT           "© 2003-2022 by Alexander Melkov et al.",IDC_STATIC,32,16,137,10
     CTEXT           "Distributed under GNU GPL",IDC_STATIC,38,30,106,10
     EDITTEXT        110,13,55,158,12,ES_CENTER | ES_AUTOHSCROLL | 
                     ES_NOHIDESEL | ES_READONLY | NOT WS_BORDER | NOT 
@@ -246,8 +250,6 @@ BEGIN
     ICON            "REGEDIT",IDC_STATIC,7,13,24,24,SS_CENTERIMAGE
     LTEXT           MAKE_VERSION_STRING(GEN_VER_DIGITAL_VERSION),IDC_STATIC,7,39,24,12
     CTEXT           "About:",IDC_STATIC,71,42,42,10
-    LTEXT           "One important note:\n- This is a beta release. There are bugs, and bug reports are highly desirable.",
-                    IDC_STATIC,3,88,180,42
 END
 
 REPLACEINPROGRESS DIALOG DISCARDABLE  0, 0, 155, 53
