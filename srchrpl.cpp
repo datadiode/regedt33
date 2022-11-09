@@ -578,10 +578,10 @@ bool SearchReplaceKeyValues(HKEY hkey, int ro, const TCHAR *keyname, const TCHAR
       if (l == 0 || l == 2 || l == 3) {
         if (l == 0 || l == 3) { if (RplProgrDlg) SendMessage(RplProgrDlg, WM_CLOSE, 0, 0); }
         if (l == 3) {
-          extern HWND TreeW, ListW, LastFocusedW;
+          extern HWND TreeW, ListW;
           ShowItemByKeyName(TreeW, keyname);
           SelectItemByValueName(ListW, srk[n].name);
-          SetFocus(LastFocusedW = ListW);
+          SetFocus(ListW);
         }
         continue;
       }

@@ -5,7 +5,7 @@
 #include "regsavld.h"
 
 HINSTANCE hInst;
-HWND MainWindow, SbarW, hwndToolTip, TreeW, ListW, LastFocusedW, RplProgrDlg;
+HWND MainWindow, SbarW, hwndToolTip, TreeW, ListW, RplProgrDlg;
 #ifdef _WIN32_WCE
 HWND CbarW;
 #endif
@@ -50,8 +50,8 @@ void GetLVItemText(HWND ListW, int i, TCHAR *&name, DWORD &ns);
 
 int RefreshSubtree(HTREEITEM hfc, const TCHAR *kname, HKEY hk);
 int ConnectRegistry(achar &comp, HKEY node, const TCHAR *node_name5, TVINSERTSTRUCT &tvins);
-TCHAR szClsName[]=_T("regedit33");
-TCHAR szWndName[]=_T("Advanced Registry Editor");
+TCHAR const szClsName[] = _T("regedit33");
+TCHAR const szWndName[] = _T("Advanced Registry Editor");
 
 #ifndef _WIN32_WCE
 bool has_rest_priv = true, has_back_priv = true;
@@ -126,30 +126,28 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
 
   if (FindWindow(szClsName,NULL)) {MessageBeep(MB_OK);return 0;}//?
   InitCommonControls();
-  
-  wcl.hInstance=hTI;
-  wcl.lpszClassName=szClsName;
-  wcl.lpfnWndProc=WindowProc;
-  wcl.style=CS_HREDRAW | CS_VREDRAW;
-  wcl.hIcon=LoadIcon (hTI,_T("RegEdit"));
-  wcl.hCursor=LoadCursor(NULL,IDC_SIZEWE);//LoadCursor (NULL, IDC_ARROW);
-#ifndef _WIN32_WCE
-  wcl.lpszMenuName=_T("MainMenu");
-#else
-  wcl.lpszMenuName=NULL;
-#endif
-  wcl.cbClsExtra=0;
-  wcl.cbWndExtra=0;
-  wcl.hbrBackground=(HBRUSH)GetStockObject (LTGRAY_BRUSH);
-  if (!RegisterClass (&wcl)) return 0;
 
-  wcl.lpszClassName=_T("MyHexEdit");
-  wcl.lpfnWndProc=MyHexEditProc;
-  wcl.hIcon=NULL, wcl.hCursor=NULL;
-  wcl.lpszMenuName=NULL;
-  wcl.cbWndExtra=16;
-  wcl.hbrBackground=(HBRUSH)GetStockObject(WHITE_BRUSH);
-  if (!RegisterClass (&wcl)) return 0;
+  if (!GetClassInfo(NULL, WC_DIALOG, &wcl)) return 0;
+  wcl.hInstance = hTI;
+  wcl.lpszClassName = szClsName;
+  wcl.lpfnWndProc = WindowProc;
+  wcl.hIcon = LoadIcon(hTI,_T("RegEdit"));
+  wcl.hCursor = LoadCursor(NULL, IDC_SIZEWE);
+#ifndef _WIN32_WCE
+  wcl.lpszMenuName = _T("MainMenu");
+#endif
+  if (!RegisterClass(&wcl)) return 0;
+
+  wcl.style = CS_HREDRAW | CS_VREDRAW;
+  wcl.lpszClassName = _T("MyHexEdit");
+  wcl.lpfnWndProc = MyHexEditProc;
+  wcl.hIcon = NULL;
+  wcl.hCursor = NULL;
+  wcl.lpszMenuName = NULL;
+  wcl.cbClsExtra = 0;
+  wcl.cbWndExtra = 16;
+  wcl.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+  if (!RegisterClass(&wcl)) return 0;
 
   EWcur=LoadCursor(NULL,IDC_SIZEWE);
   imt=ImageList_LoadBitmap(hTI,MAKEINTRESOURCE(IDB_TYPES),16,0,CLR_NONE);
@@ -171,7 +169,7 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
 
   //Beep(300,10);
   LoadSettings();
-  hwnd=CreateWindow (szClsName, szWndName,
+  hwnd = CreateWindowEx(WS_EX_CONTROLPARENT, szClsName, szWndName,
 	WS_OVERLAPPEDWINDOW,
 	CW_USEDEFAULT,
 	CW_USEDEFAULT,
@@ -209,8 +207,10 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   EnablePrivilege_NT(0, SE_SHUTDOWN_NAME); //may be...
 #endif
 
-  while (GetMessage (&msg,NULL,0,0)) {
-	TranslateMessage (&msg);
+  while (GetMessage(&msg,NULL,0,0)) {
+    if (IsDialogMessage(hwnd, &msg))
+      continue;
+    TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
   //CloseHandle(imt);
@@ -224,33 +224,16 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   return 0;
 }
 
-LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  //HDC hdc;
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   int n,k,i;
   TCHAR *s,ss[40];
   HKEY hk;
   RECT rc;
-  DWORD mp;
   POINT pt;
   TVINSERTSTRUCT tvins;
   LVCOLUMN lvcol;
-  HMENU pum;
 
   switch (msg) {
-  case WM_CHAR:
-	if ((TCHAR)wParam==9 && !is_dragging) {
-	  if (LastFocusedW==TreeW) LastFocusedW=ListW;
-	  else LastFocusedW=TreeW;
-	  SetFocus(LastFocusedW);
-	  //Beep(500,50);
-	}
-    if ((TCHAR)wParam == 27 && is_dragging) {
-      ValuesEndDrag(hwnd, false);
-    }
-	break;
-  //case WM_PAINT:
-	//break;
-
   case WM_COMMAND:
     if (LOWORD(wParam) >= 41000 && LOWORD(wParam) < 41100) { //Favorites menu
       size_t it = LOWORD(wParam) - 41000;
@@ -260,7 +243,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
       HTREEITEM ti = ShowItemByKeyName(TreeW, key.c);
       if (ti && favItems[it].value) {
         if (!SelectItemByValueName(ListW, favItems[it].value))
-          SetFocus(LastFocusedW = ListW);
+          SetFocus(ListW);
       }
       break;
     }
@@ -454,8 +437,7 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     case IDM_FAV_EDIT: {
       bool is_already_there = !_tcsicmp(currentitem, _T("HKCU\\") REFAVPATH);
       ShowItemByKeyName(TreeW, _T("HKCU\\") REFAVPATH);
-	  LastFocusedW=ListW;
-	  SetFocus(LastFocusedW);
+      SetFocus(ListW);
       if (!is_already_there && ListView_GetItemCount(ListW) > 0)  //And select first item (if any)
         ListView_SetItemState(ListW, 0, LVIS_FOCUSED | LVIS_SELECTED, LVIS_FOCUSED | LVIS_SELECTED);
       }
@@ -665,7 +647,27 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	  break;
 	}
 	break;
-	
+
+  case WM_CONTEXTMENU:
+    POINTSTOPOINT(pt, lParam);
+    if ((HWND)wParam == TreeW) {
+      TVHITTESTINFO hti;
+      hti.pt = pt;
+      ScreenToClient(TreeW, &hti.pt);
+      TreeView_HitTest(TreeW, &hti);
+      if ((hti.flags & TVHT_ONITEM) == 0) break;
+      TreeView_SelectItem(TreeW, hti.hItem);
+    } else if ((HWND)wParam == ListW) {
+      if (currentitem == NULL) break;
+    } else break;
+    SetFocus((HWND)wParam);
+    if (HMENU pum = CreatePopupMenu()) {
+      AddSelCommandsToMenu((HWND)wParam, pum);
+      TrackPopupMenu(pum, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
+      DestroyMenu(pum);
+    }
+    break;
+
   case WM_CREATE:
 	//MyFnt=CreateFont(16,8,0,0,FW_SEMIBOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH | FF_DONTCARE, "Arial Cyr");
 	//MyFnS=CreateFont(16,8,0,0,FW_LIGHT,FALSE,FALSE,TRUE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH | FF_DONTCARE, "Arial Cyr");
@@ -693,7 +695,6 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	  TVS_EDITLABELS | TVS_SHOWSELALWAYS | WS_TABSTOP,
 	  0,0,0,0,hwnd,(HMENU)200,hInst,NULL);
 	if (!TreeW) ErrMsgDlgBox(_T("TreeView"));
-	LastFocusedW=TreeW;
 	ListW=CreateWindowEx(WS_EX_CLIENTEDGE,WC_LISTVIEW,_T("none"), 
 	  WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHAREIMAGELISTS | WS_TABSTOP |
 	  LVS_EDITLABELS | LVS_SORTASCENDING,
@@ -880,11 +881,6 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 	case TVN_KEYDOWN:
       wVKey = ((LPNMTVKEYDOWN)lParam)->wVKey;
-	  if (wVKey == 9) {
-		LastFocusedW=ListW;
-		SetFocus(LastFocusedW);
-		return 1;
-	  }
       if (wVKey == VK_F5) {
         SendMessage(hwnd,WM_COMMAND,340,0);
 		return 1;
@@ -929,11 +925,6 @@ LRESULT CALLBACK WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
     case LVN_KEYDOWN:
       wVKey = ((LPNMLVKEYDOWN)lParam)->wVKey;
-	  if (wVKey == 9) {
-		LastFocusedW=TreeW;
-		SetFocus(LastFocusedW);
-		return 1;
-	  }
       if (wVKey == VK_F3) {
         DoSearchAndReplaceNext(hwnd);
         return 1;
@@ -1007,36 +998,10 @@ e201dbl:
 	  }
 	  break;
 
-	case NM_RCLICK:
-	  mp = GetMessagePos();
-	  POINTSTOPOINT(pt, mp);
-	  if (k==200) {
-		TVHITTESTINFO hti;
-		hti.pt = pt;
-		ScreenToClient(TreeW, &hti.pt);
-		TreeView_HitTest(TreeW, &hti);
-		if (hti.flags & TVHT_ONITEM) {
-		  TreeView_SelectItem(TreeW, hti.hItem);
-		  pum = CreatePopupMenu();
-		  AddSelCommandsToMenu(TreeW, pum);
-		  TrackPopupMenu(pum, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
-		  DestroyMenu(pum);
-		}
-	  } else if (k==201) {
-		if (currentitem) {
-		  pum = CreatePopupMenu();
-		  AddSelCommandsToMenu(ListW, pum);
-		  TrackPopupMenu(pum, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
-		  DestroyMenu(pum);
-		}
-	  }
-	  return 0;
-	  break;
-
-	case NM_SETFOCUS:
-	  if (k==200) LastFocusedW=TreeW;
-	  else if (k==201) LastFocusedW=ListW;
-	  break;
+#ifdef _WIN32_WCE
+    case NM_RCLICK:
+      return PostMessage(hwnd, WM_CONTEXTMENU, *(WPARAM*)lParam, GetMessagePos());
+#endif
 
     case LVN_BEGINDRAG:
       void ValuesBeginDrag(HWND hwnd, LPARAM lParam);
@@ -1104,21 +1069,13 @@ e201dbl:
     SetWindowPos(ListW,HWND_TOP,xTree+xSplitBar,CbarHeight,dxw-xTree-xSplitBar,dyw-SbarHeight-CbarHeight,0);
     //if (wParam==SIZE_MINIMIZED) ShowWindow(hwnd,SW_HIDE);
     break;
-    
-  case WM_SETFOCUS:
-    SetFocus(LastFocusedW);
-    break;
 
   case WM_CAPTURECHANGED:
     if (onWpos) onWpos = false;
     if (is_dragging) ValuesEndDrag(hwnd, false);
     break;
-
-  default:
-    return DefWindowProc (hwnd,msg,wParam,lParam);
-
   }
-  return 0;
+  return DefDlgProc(hwnd,msg,wParam,lParam);
 }
 
 typedef set<TCHAR*, str_less_than> mystrhash;
@@ -1563,7 +1520,7 @@ void ValuesBeginDrag(HWND hwnd, LPARAM lParam) {
   prevdhlti = 0; prev_candrop = false, could_ever_drop = false;
   prevdhltibtm = GetTickCount();
   is_key_dragging = false;
-  //EnableWindow(ListW, false); SetFocus(LastFocusedW = TreeW);
+  //EnableWindow(ListW, false); SetFocus(TreeW);
 }
 
 void KeyBeginDrag(HWND hwnd, LPARAM lParam) {
@@ -1589,7 +1546,7 @@ void KeyBeginDrag(HWND hwnd, LPARAM lParam) {
   prevdhlti = 0; prev_candrop = false, could_ever_drop = false;
   prevdhltibtm = GetTickCount();
   is_key_dragging = true;
-  //EnableWindow(ListW, false); SetFocus(LastFocusedW = TreeW);
+  //EnableWindow(ListW, false); SetFocus(TreeW);
 }
 
 
@@ -1599,7 +1556,7 @@ void ValuesEndDrag(HWND hwnd, bool is_ok) {
   ImageList_DragLeave(hwnd);
   
   ReleaseCapture();
-  //EnableWindow(ListW, true); SetFocus(LastFocusedW = ListW);
+  //EnableWindow(ListW, true); SetFocus(ListW);
   ImageList_Destroy(dragiml);
   SetCursor(curs_arr);
   if (prevdhlti) TreeView_SetItemState(TreeW, prevdhlti, 0, TVIS_DROPHILITED/*mask*/);
