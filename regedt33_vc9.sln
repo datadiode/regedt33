@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "regedt33", "regedt33_vc9.vcproj", "{152611A8-0982-4CD0-A6AD-B808B082145B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		DebugU|Beckhoff_HMI_600 (ARMV4I) = DebugU|Beckhoff_HMI_600 (ARMV4I)
+		DebugU|Beckhoff_HMI_600 (x86) = DebugU|Beckhoff_HMI_600 (x86)
+		ReleaseU|Beckhoff_HMI_600 (ARMV4I) = ReleaseU|Beckhoff_HMI_600 (ARMV4I)
+		ReleaseU|Beckhoff_HMI_600 (x86) = ReleaseU|Beckhoff_HMI_600 (x86)
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.DebugU|Beckhoff_HMI_600 (ARMV4I).ActiveCfg = DebugU|Beckhoff_HMI_600 (ARMV4I)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.DebugU|Beckhoff_HMI_600 (ARMV4I).Build.0 = DebugU|Beckhoff_HMI_600 (ARMV4I)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.DebugU|Beckhoff_HMI_600 (ARMV4I).Deploy.0 = DebugU|Beckhoff_HMI_600 (ARMV4I)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.DebugU|Beckhoff_HMI_600 (x86).ActiveCfg = DebugU|Beckhoff_HMI_600 (x86)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.DebugU|Beckhoff_HMI_600 (x86).Build.0 = DebugU|Beckhoff_HMI_600 (x86)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.DebugU|Beckhoff_HMI_600 (x86).Deploy.0 = DebugU|Beckhoff_HMI_600 (x86)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.ReleaseU|Beckhoff_HMI_600 (ARMV4I).ActiveCfg = ReleaseU|Beckhoff_HMI_600 (ARMV4I)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.ReleaseU|Beckhoff_HMI_600 (ARMV4I).Build.0 = ReleaseU|Beckhoff_HMI_600 (ARMV4I)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.ReleaseU|Beckhoff_HMI_600 (ARMV4I).Deploy.0 = ReleaseU|Beckhoff_HMI_600 (ARMV4I)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.ReleaseU|Beckhoff_HMI_600 (x86).ActiveCfg = ReleaseU|Beckhoff_HMI_600 (x86)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.ReleaseU|Beckhoff_HMI_600 (x86).Build.0 = ReleaseU|Beckhoff_HMI_600 (x86)
+		{152611A8-0982-4CD0-A6AD-B808B082145B}.ReleaseU|Beckhoff_HMI_600 (x86).Deploy.0 = ReleaseU|Beckhoff_HMI_600 (x86)
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
