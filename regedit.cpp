@@ -169,16 +169,16 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
 
   //Beep(300,10);
   LoadSettings();
-  hwnd = CreateWindowEx(WS_EX_CONTROLPARENT, szClsName, szWndName,
-	WS_OVERLAPPEDWINDOW,
-	CW_USEDEFAULT,
-	CW_USEDEFAULT,
-	CW_USEDEFAULT, //Width
-	CW_USEDEFAULT, //Height
-	HWND_DESKTOP,
-	NULL,
-	hTI,
-	NULL
+  hwnd = CreateWindow(szClsName, szWndName,
+    WS_OVERLAPPEDWINDOW,
+    CW_USEDEFAULT,
+    CW_USEDEFAULT,
+    CW_USEDEFAULT, //Width
+    CW_USEDEFAULT, //Height
+    HWND_DESKTOP,
+    NULL,
+    hTI,
+    NULL
     );
   MainWindow=hwnd;
 
@@ -409,6 +409,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
           RegCloseKey(hk);
         }
       }
+      break;
+#else
+    case IDM_REGISTRY_FLUSH:
+      RegFlushKey(HKEY_CLASSES_ROOT);
+      RegFlushKey(HKEY_CURRENT_USER);
+      RegFlushKey(HKEY_LOCAL_MACHINE);
+      RegFlushKey(HKEY_USERS);
       break;
 #endif
 

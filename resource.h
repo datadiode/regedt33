@@ -113,6 +113,7 @@
 #define IDM_FINDNEXT                    40014
 #define IDM_REGISTRY_LOADHIVE           40015
 #define IDM_REGISTRY_UNLOADHIVE         40016
+#define IDM_REGISTRY_FLUSH              40017
 #define ID_EDIT_REPLACEKEY              40018
 #define IDM_FAV_GOTO                    40019
 #define IDM_FAV_ADDKEY                  40021

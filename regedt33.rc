@@ -42,6 +42,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Load Hive",                  IDM_REGISTRY_LOADHIVE
         MENUITEM "&Unload Hive",                IDM_REGISTRY_UNLOADHIVE
+#else
+        MENUITEM SEPARATOR
+        MENUITEM "&Flush Registry",             IDM_REGISTRY_FLUSH
 #endif
         MENUITEM SEPARATOR
         MENUITEM "&Settings",                   IDM_SETTINGS
