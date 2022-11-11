@@ -3,6 +3,7 @@
 #include <excpt.h>
 #include <windef.h>
 #define DWLP_USER DWL_USER
+#define DWLP_MSGRESULT DWL_MSGRESULT
 #define GWLP_WNDPROC GWL_WNDPROC
 #define ULONG_PTR ULONG
 #define LONG_PTR LONG

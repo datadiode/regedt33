@@ -9,7 +9,6 @@ HWND MainWindow, SbarW, hwndToolTip, TreeW, ListW, RplProgrDlg;
 #ifdef _WIN32_WCE
 HWND CbarW;
 #endif
-HCURSOR EWcur;
 HIMAGELIST imt;
 LRESULT CALLBACK WindowProc (HWND,UINT,WPARAM,LPARAM);
 LRESULT CALLBACK MyHexEditProc (HWND,UINT,WPARAM,LPARAM);
@@ -98,7 +97,7 @@ HTREEITEM prevdhlti = 0;
   SNDMSG((hwndTV), TVM_SETITEM, 0, (LPARAM)(TV_ITEM FAR *)&_ms_TVi);\
 }
 #endif
-HCURSOR curs_arr = 0, curs_no = 0;
+HCURSOR curs_arr = 0, curs_no = 0, curs_hand = 0;
 //HICON regsmallicon = 0;
 DWORD prevdhltibtm = 0;
 
@@ -149,7 +148,6 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   wcl.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
   if (!RegisterClass(&wcl)) return 0;
 
-  EWcur=LoadCursor(NULL,IDC_SIZEWE);
   imt=ImageList_LoadBitmap(hTI,MAKEINTRESOURCE(IDB_TYPES),16,0,CLR_NONE);
   img_up=LoadBitmap(hTI,_T("ARROWUP"));
   img_down=LoadBitmap(hTI,_T("ARROWDOWN"));
@@ -164,6 +162,8 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   if (!curs_no) ErrMsgDlgBox(_T("LoadCursor(NULL, IDC_NO)"));
   curs_arr = LoadCursor(NULL, IDC_ARROW);
   if (!curs_arr) ErrMsgDlgBox(_T("LoadCursor(NULL, IDC_ARROW)"));
+  curs_hand = LoadCursor(NULL, IDC_HAND);
+  if (!curs_hand) ErrMsgDlgBox(_T("LoadCursor(NULL, IDC_ARROW)"));
   //regsmallicon = LoadIcon(hInst, _T("REGSMALL"));
 
 
@@ -1726,17 +1726,54 @@ void ValuesAskMoveOrCopy(HWND hwnd, int mvflag, const TCHAR *dst) {
   }
 }
 
-INT_PTR CALLBACK DialogAbout (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
-    switch (msg) {
-	case WM_INITDIALOG: SetDlgItemText(hwnd,110,_T("http://melkov.narod.ru/misc/tools/regedt33/")); return 1;
-    case WM_CLOSE: EndDialog(hwnd,0); return 1;
-    case WM_COMMAND:
-		switch (LOWORD (wParam)) {
-		case IDOK: EndDialog(hwnd,1);	break;
-		case IDCANCEL: EndDialog(hwnd,0); break; }
-		return 1;
-	}
-	return 0;
+INT_PTR CALLBACK DialogAbout(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
+  DRAWITEMSTRUCT *pdis;
+  SHELLEXECUTEINFO sei;
+  TCHAR text[80];
+  switch (msg) {
+  case WM_INITDIALOG:
+    return 1;
+  case WM_DRAWITEM:
+    pdis = (DRAWITEMSTRUCT *)lParam;
+    switch (pdis->itemAction) {
+    case ODA_DRAWENTIRE:
+      SetTextColor(pdis->hDC, GetSysColor(COLOR_INFOTEXT));
+      SetBkColor(pdis->hDC, GetSysColor(COLOR_INFOBK));
+      GetWindowText(pdis->hwndItem, text, _countof(text));
+      ExtTextOut(pdis->hDC, 0, 0, ETO_OPAQUE, &pdis->rcItem, NULL, 0, NULL);
+      DrawText(pdis->hDC, text, -1, &pdis->rcItem, DT_SINGLELINE | DT_CENTER | DT_VCENTER | DT_NOPREFIX);
+      break;
+    case ODA_FOCUS:
+      DrawFocusRect(pdis->hDC, &pdis->rcItem);
+      break;
+    }
+    return 1;
+  case WM_SETCURSOR:
+    if ((SendMessage((HWND)wParam, WM_GETDLGCODE, 0, 0) & (DLGC_BUTTON | DLGC_DEFPUSHBUTTON | DLGC_UNDEFPUSHBUTTON)) == DLGC_BUTTON)
+      SetCursor(curs_hand);
+    else
+      SetCursor(curs_arr);
+    SetWindowLongPtr(hwnd, DWLP_MSGRESULT, 1);
+    return 1;
+  case WM_COMMAND:
+    switch (wParam) {
+    case 110:
+    case 111:
+      GetWindowText((HWND)lParam, text, _countof(text));
+      memset(&sei, 0, sizeof sei);
+      sei.cbSize = sizeof sei;
+      sei.nShow = SW_SHOWNORMAL;
+      sei.lpFile = text;
+      ShellExecuteEx(&sei);
+      break;
+    case IDOK:
+    case IDCANCEL:
+      EndDialog(hwnd, wParam);
+      break;
+    }
+    return 1;
+  }
+  return 0;
 }
 
 extern bool allow_delete_important_keys;
