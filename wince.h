@@ -14,4 +14,12 @@
 #define WS_OVERLAPPEDWINDOW (WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)
 #define SBARS_SIZEGRIP 0
 #define WC_DIALOG L"Dialog"
+#if (_WIN32_WCE == 0x800) && defined(_X86_)
+// To compensate for Compact2013_SDK_86Duino_80B's lack of CE_MODULES_COMMCTRL:
+// - Use Header from <../../../../wce600/Beckhoff_HMI_600/Include/X86/commctrl.h>
+// - Use ImpLib from $(SdkRootPath)..\..\..\wce600\Beckhoff_HMI_600\Lib\x86\commctrl.lib
+#pragma include_alias(<commctrl.h>,<../../../../wce600/Beckhoff_HMI_600/Include/X86/commctrl.h>)
+#endif
+#else
+#define GetProcAddressA GetProcAddress
 #endif

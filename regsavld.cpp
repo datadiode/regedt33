@@ -40,16 +40,6 @@
 #define GetSaveFileName GetSaveFileNameW
 #endif
 
-#ifndef _WIN32_WCE
-#define GetProcAddressA GetProcAddress
-#endif
-
-template<typename f>
-struct DllImport {
-  FARPROC p;
-  f operator*() const { return reinterpret_cast<f>(p); }
-};
-
 static struct commdlg {
   struct OPENFILENAME {
     DWORD lStructSize;

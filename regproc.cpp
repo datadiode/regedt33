@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <windows.h>
 #include <tchar.h>
-#include <commctrl.h>
 #define REG_VAL_BUF_SIZE        4096
 
 static HKEY reg_class_keys[] = {

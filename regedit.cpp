@@ -1726,9 +1726,44 @@ void ValuesAskMoveOrCopy(HWND hwnd, int mvflag, const TCHAR *dst) {
   }
 }
 
+static struct shellapi {
+  // Modified from mingw-w64's shellapi.h
+  // Copyright (c) 2009 - 2013 by the mingw-w64 project
+  // SPDX-License-Identifier: ZPL-2.1
+  struct SHELLEXECUTEINFO {
+    DWORD cbSize;
+    ULONG fMask;
+    HWND hwnd;
+    LPCTSTR lpVerb;
+    LPCTSTR lpFile;
+    LPCTSTR lpParameters;
+    LPCTSTR lpDirectory;
+    int nShow;
+    HINSTANCE hInstApp;
+    void *lpIDList;
+    LPCTSTR lpClass;
+    HKEY hkeyClass;
+    DWORD dwHotKey;
+    union {
+      HANDLE hIcon;
+      HANDLE hMonitor;
+    } DUMMYUNIONNAME;
+    HANDLE hProcess;
+  };
+  HMODULE h;
+  DllImport<BOOL(WINAPI*)(SHELLEXECUTEINFO*)> ShellExecuteEx;
+} const shellapi = {
+#ifdef _WIN32_WCE
+  GetModuleHandle(_T("COREDLL.DLL")),
+#else
+  LoadLibrary(_T("SHELL32.DLL")),
+#endif
+  GetProcAddressA(shellapi.h, _CRT_STRINGIZE(ShellExecuteEx)),
+};
+
 INT_PTR CALLBACK DialogAbout(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
   DRAWITEMSTRUCT *pdis;
-  SHELLEXECUTEINFO sei;
+  shellapi::SHELLEXECUTEINFO sei;
   TCHAR text[80];
   switch (msg) {
   case WM_INITDIALOG:
@@ -1759,12 +1794,16 @@ INT_PTR CALLBACK DialogAbout(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
     switch (wParam) {
     case 110:
     case 111:
+      if (!*shellapi.ShellExecuteEx) {
+        MessageBox(MainWindow, _T("Unsupported on this platform"), _T("DialogAbout"), MB_ICONSTOP);
+        break;
+      }
       GetWindowText((HWND)lParam, text, _countof(text));
       memset(&sei, 0, sizeof sei);
       sei.cbSize = sizeof sei;
       sei.nShow = SW_SHOWNORMAL;
       sei.lpFile = text;
-      ShellExecuteEx(&sei);
+      (*shellapi.ShellExecuteEx)(&sei);
       break;
     case IDOK:
     case IDCANCEL:

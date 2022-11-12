@@ -17,6 +17,12 @@ using namespace std;
 
 #include "automgm.h"
 
+template<typename f>
+struct DllImport {
+  FARPROC p;
+  f operator*() const { return reinterpret_cast<f>(p); }
+};
+
 /// Iterator for values of a registry key
 struct value_iterator {
   bool is_end, is_err, is_ok;
