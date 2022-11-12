@@ -1777,7 +1777,8 @@ INT_PTR CALLBACK DialogAbout(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
       GetWindowText(pdis->hwndItem, text, _countof(text));
       ExtTextOut(pdis->hDC, 0, 0, ETO_OPAQUE, &pdis->rcItem, NULL, 0, NULL);
       DrawText(pdis->hDC, text, -1, &pdis->rcItem, DT_SINGLELINE | DT_CENTER | DT_VCENTER | DT_NOPREFIX);
-      break;
+      if ((pdis->itemState & ODS_FOCUS) == 0) break;
+      // fall through
     case ODA_FOCUS:
       DrawFocusRect(pdis->hDC, &pdis->rcItem);
       break;
