@@ -25,6 +25,27 @@ fieldset iframe
 	height: 50%;
 	zoom: 75%;
 }
+div
+{
+	white-space: nowrap;
+}
+div label
+{
+	padding-right: 10px;
+}
+a
+{
+	color: blue;
+	background-color: silver;
+	position: absolute;
+	right: 15px;
+}
+span
+{
+	position: absolute;
+	right: 10px;
+	bottom: 5px;
+}
 </style>
 <script type="text/vbs">
 Option Explicit
@@ -40,7 +61,7 @@ Set wsh = CreateObject("WScript.Shell")
 Dim home, inst
 home = fso.GetParentFolderName(location.pathname)
 inst = wsh.RegRead("HKCR\CLSID\{A31E2E44-714B-11D6-8A19-000102228262}\LocalServer32\")
-inst = fso.GetParentFolderName(Replace(inst, """", "")) & "\AddOn"
+inst = fso.GetParentFolderName(Replace(inst, """", ""))
 
 Function IsAdmin
 	On Error Resume Next
@@ -49,7 +70,7 @@ Function IsAdmin
 End Function
 
 Function AddOnFolder
-	AddOnFolder = Replace(home, home, inst, 1, Intrusive.checked)
+	AddOnFolder = Replace(home, home, inst, 1, Intrusive.checked) & "\AddOn"
 End Function
 
 Function CreateFolder(path)
@@ -66,6 +87,7 @@ End Function
 
 Sub CreateAddon_OnClick
 	Dim i, frame, line, path, file
+	CreateFolder(AddOnFolder)
 	If CreateFolder(AddOnFolder & "\" & AddOnName) Then DeleteAddon.disabled = False
 	For i = 0 To document.frames.length - 1
 		Set frame = document.frames(i)
@@ -100,19 +122,26 @@ Sub Intrusive_OnClick
 	DeleteAddon.disabled = Not fso.FolderExists(AddOnFolder & "\" & AddOnName)
 End Sub
 
+Sub ShowLicense_OnClick
+	showModalDialog "LICENSE", Nothing, "dialogWidth=40em"
+End Sub
+
 Sub Window_OnLoad
 	Dim i, frame
 	For i = 0 To document.frames.length - 1
 		Set frame = document.frames(i)
-		frame.frameElement.src = Replace(frame.frameElement.src, "about:",  inst & "\HTML_AddOn\")
+		frame.frameElement.src = Replace(frame.frameElement.src, "about:", inst & "\AddOn\HTML_AddOn\")
 	Next
 	Intrusive.disabled = Not IsAdmin
 	Intrusive.checked = Not Intrusive.disabled
 	DeleteAddon.disabled = Not fso.FolderExists(AddOnFolder & "\" & AddOnName)
+	Version.innerText = fso.GetFileVersion(home & "\Compact2013_SDK_86Duino_80B\ReleaseU\regedt33.exe")
 End Sub
 </script>
 </head>
 <body>
+<a href="#" unselectable="on" onclick="vbs:wsh.Run(Me.innerText)">https://github.com/datadiode/regedt33</a>
+<span disabled id="Version"></span>
 <fieldset>
 <legend>Templates</legend>
 <iframe name="arm_800" title="WEC2013 Beaglebone SDK" src="about:KTP_Mob_4.pii"></iframe>
@@ -124,8 +153,11 @@ End Sub
 <iframe name="x86_600" title="Beckhoff_HMI_600 (x86)" src="about:CP_15.pii"></iframe>
 <iframe name="x86_800" title="Compact2013_SDK_86Duino_80B" src="about:CP_GX_800.pii"></iframe>
 </fieldset>
+<div>
 <button id="CreateAddon">Create ProSave Addon</button>
 <button id="DeleteAddon">Delete ProSave Addon</button>
 <label for="Intrusive" title="This option allows an install right beside ProSave's stock addons (requires admin rights)">
 <input id="Intrusive" type="checkbox">Intrusive</label>
+<button id="ShowLicense">&#9878; Show License</button>
+</div>
 </body>
