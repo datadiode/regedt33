@@ -10,6 +10,7 @@ HWND MainWindow, SbarW, hwndToolTip, TreeW, ListW, RplProgrDlg;
 HWND CbarW;
 #endif
 HIMAGELIST imt;
+INT_PTR CALLBACK DialogProc (HWND,UINT,WPARAM,LPARAM);
 LRESULT CALLBACK WindowProc (HWND,UINT,WPARAM,LPARAM);
 LRESULT CALLBACK MyHexEditProc (HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK EditString (HWND,UINT,WPARAM,LPARAM);
@@ -169,17 +170,7 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
 
   //Beep(300,10);
   LoadSettings();
-  hwnd = CreateWindow(szClsName, szWndName,
-    WS_OVERLAPPEDWINDOW,
-    CW_USEDEFAULT,
-    CW_USEDEFAULT,
-    CW_USEDEFAULT, //Width
-    CW_USEDEFAULT, //Height
-    HWND_DESKTOP,
-    NULL,
-    hTI,
-    NULL
-    );
+  hwnd = CreateDialog(hTI, szClsName, NULL, DialogProc);
   MainWindow=hwnd;
 
   ShowWindow(hwnd,nWinMode);
@@ -208,7 +199,8 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
 #endif
 
   while (GetMessage(&msg,NULL,0,0)) {
-    if (IsDialogMessage(hwnd, &msg))
+    UINT dlgcode = (UINT)SendMessage(msg.hwnd, WM_GETDLGCODE, 0, 0);
+    if ((dlgcode & DLGC_HASSETSEL) == 0 && IsDialogMessage(hwnd, &msg))
       continue;
     TranslateMessage(&msg);
     DispatchMessage(&msg);
@@ -224,14 +216,99 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   return 0;
 }
 
+INT_PTR CALLBACK DialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  LVCOLUMN lvcol;
+  RECT rc;
+  TVINSERTSTRUCT tvins;
+
+  switch (msg) {
+  case WM_INITDIALOG:
+	if (HWND hwndDefault = CreateWindow(WC_DIALOG, NULL, WS_DISABLED,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, NULL, NULL)) {
+	  GetWindowRect(hwndDefault, &rc);
+	  SetWindowPos(hwnd, NULL, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOZORDER);
+	  DestroyWindow(hwndDefault);
+	}
+
+	GetClientRect(hwnd, &rc);
+	lParam = MAKELPARAM(rc.right - rc.left, rc.bottom - rc.top); // passed through to case WM_SIZE
+
+	xTree = MulDiv(rc.right - rc.left, xTree, dxw);
+	xName = MulDiv(rc.right - rc.left, xName, dxw);
+	xData = MulDiv(rc.right - rc.left, xData, dxw);
+#ifdef _WIN32_WCE
+	CbarW = CommandBar_Create(hInst, hwnd, 1);
+	CommandBar_InsertMenubarEx(CbarW, hInst, _T("MainMenu"), 0);
+	CommandBar_Show(CbarW, TRUE);
+	CbarHeight = CommandBar_Height(CbarW);
+#endif
+	SbarW = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_BORDER | SBARS_SIZEGRIP, _T("Root"), hwnd, 1001);
+	hwndToolTip = CreateWindowEx( 0, TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_ALWAYSTIP,
+		CW_USEDEFAULT, CW_USEDEFAULT, 20, 20, hwnd, NULL, hInst, NULL);
+	if (!hwndToolTip) MessageBeep(MB_OK);
+    else SendMessage(hwndToolTip, TTM_SETMAXTIPWIDTH, 0, 300);
+	SendMessage(SbarW, SB_GETRECT, 0, (LPARAM)&rc);
+	SbarHeight = rc.bottom - rc.top;
+	TreeW=CreateWindowEx(WS_EX_CLIENTEDGE,WC_TREEVIEW,_T("none"), 
+	  WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT |
+	  TVS_EDITLABELS | TVS_SHOWSELALWAYS | WS_TABSTOP,
+	  0,0,0,0,hwnd,(HMENU)200,hInst,NULL);
+	if (!TreeW) ErrMsgDlgBox(_T("TreeView"));
+	ListW=CreateWindowEx(WS_EX_CLIENTEDGE,WC_LISTVIEW,_T("none"), 
+	  WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHAREIMAGELISTS | WS_TABSTOP |
+	  LVS_EDITLABELS | LVS_SORTASCENDING,
+	  0,0,0,0,hwnd,(HMENU)201,hInst,NULL);
+	if (!ListW) ErrMsgDlgBox(_T("SysListView32"));
+	ListView_SetImageList(ListW,imt,LVSIL_SMALL);
+	//TreeView Setup
+	tvins.hParent=TVI_ROOT, tvins.hInsertAfter=TVI_LAST;
+	tvins.item.mask=TVIF_CHILDREN | TVIF_STATE | TVIF_TEXT, tvins.item.state=TVIS_BOLD;//|TVIS_EXPANDED ; 
+	tvins.item.stateMask=0xFFFF, tvins.item.cChildren=1;
+	tvins.item.pszText=_T("HKCR");
+	HKCR=TreeView_InsertItem(TreeW,&tvins);
+	tvins.item.pszText=_T("HKCU");
+	HKCU=TreeView_InsertItem(TreeW,&tvins);
+	tvins.item.pszText=_T("HKLM");
+	HKLM=TreeView_InsertItem(TreeW,&tvins);
+	tvins.item.pszText=_T("HKUS");
+	HKUS=TreeView_InsertItem(TreeW,&tvins);
+#ifndef _WIN32_WCE
+	tvins.item.pszText=_T("HKCC");
+	HKCC=TreeView_InsertItem(TreeW,&tvins);
+	tvins.item.pszText=_T("HKDD");//Win95
+	HKCC=TreeView_InsertItem(TreeW,&tvins);
+	tvins.item.pszText=_T("HKPD");//WinNT
+	HKCC=TreeView_InsertItem(TreeW,&tvins);
+#endif
+	//ListView Setup
+	lvcol.mask=LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH;
+	lvcol.fmt=LVCFMT_LEFT;
+	lvcol.iSubItem = 0; lvcol.pszText = _T("Name"); lvcol.cx = xName;
+	if (ListView_InsertColumn(ListW,0,&lvcol)==-1) ErrMsgDlgBox(_T("ListView"));
+	lvcol.iSubItem = 1; lvcol.pszText = _T("Data"); lvcol.cx = xData;
+	if (ListView_InsertColumn(ListW,1,&lvcol)==-1) ErrMsgDlgBox(_T("ListView"));
+	SetFocus(TreeW);
+	// fall through
+  case WM_SIZE:
+    dxw = LOWORD(lParam);
+    dyw = HIWORD(lParam);
+#ifdef _WIN32_WCE
+    SetWindowPos(CbarW, NULL, 0, 0, dxw, dyw, SWP_NOZORDER);
+#endif
+	SetWindowPos(SbarW, NULL, 0, 0, dxw, dyw, SWP_NOZORDER);
+    SetWindowPos(TreeW, NULL, 0, CbarHeight, min(dxw, xTree), dyw - SbarHeight - CbarHeight, SWP_NOZORDER);
+    SetWindowPos(ListW, NULL, xTree + xSplitBar, CbarHeight, dxw - xTree - xSplitBar, dyw - SbarHeight - CbarHeight, SWP_NOZORDER);
+    break;
+  }
+  return 0;
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   int n,k,i;
   TCHAR *s,ss[40];
   HKEY hk;
-  RECT rc;
   POINT pt;
   TVINSERTSTRUCT tvins;
-  LVCOLUMN lvcol;
 
   switch (msg) {
   case WM_COMMAND:
@@ -682,69 +759,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     break;
 #endif
 
-  case WM_CREATE:
-	//MyFnt=CreateFont(16,8,0,0,FW_SEMIBOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH | FF_DONTCARE, "Arial Cyr");
-	//MyFnS=CreateFont(16,8,0,0,FW_LIGHT,FALSE,FALSE,TRUE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH | FF_DONTCARE, "Arial Cyr");
-	//DlgThinFnt=CreateFont(15,5,0,0,FW_LIGHT,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH | FF_DONTCARE, "Arial Cyr");
-	//Sans8=CreateFont(16,7,0,0,FW_LIGHT,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH | FF_DONTCARE, "MS Sans Serif");
-	GetClientRect(hwnd, &rc);
-	xTree = MulDiv(rc.right - rc.left, xTree, dxw);
-	xName = MulDiv(rc.right - rc.left, xName, dxw);
-	xData = MulDiv(rc.right - rc.left, xData, dxw);
-#ifdef _WIN32_WCE
-	CbarW = CommandBar_Create(hInst, hwnd, 1);
-	CommandBar_InsertMenubarEx(CbarW, hInst, _T("MainMenu"), 0);
-	CommandBar_Show(CbarW, TRUE);
-	CbarHeight = CommandBar_Height(CbarW);
-#endif
-	SbarW = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_BORDER | SBARS_SIZEGRIP, _T("Root"), hwnd, 1001);
-	hwndToolTip = CreateWindowEx( 0, TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_ALWAYSTIP,
-		CW_USEDEFAULT, CW_USEDEFAULT, 20, 20, hwnd, NULL, hInst, NULL);
-	if (!hwndToolTip) MessageBeep(MB_OK);
-    else SendMessage(hwndToolTip, TTM_SETMAXTIPWIDTH, 0, 300);
-	SendMessage(SbarW, SB_GETRECT, 0, (LPARAM)&rc);
-	SbarHeight = rc.bottom - rc.top;
-	TreeW=CreateWindowEx(WS_EX_CLIENTEDGE,WC_TREEVIEW,_T("none"), 
-	  WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT |
-	  TVS_EDITLABELS | TVS_SHOWSELALWAYS | WS_TABSTOP,
-	  0,0,0,0,hwnd,(HMENU)200,hInst,NULL);
-	if (!TreeW) ErrMsgDlgBox(_T("TreeView"));
-	ListW=CreateWindowEx(WS_EX_CLIENTEDGE,WC_LISTVIEW,_T("none"), 
-	  WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SHAREIMAGELISTS | WS_TABSTOP |
-	  LVS_EDITLABELS | LVS_SORTASCENDING,
-	  0,0,0,0,hwnd,(HMENU)201,hInst,NULL);
-	if (!ListW) ErrMsgDlgBox(_T("SysListView32"));
-	ListView_SetImageList(ListW,imt,LVSIL_SMALL);
-	//TreeView Setup
-	tvins.hParent=TVI_ROOT, tvins.hInsertAfter=TVI_LAST;
-	tvins.item.mask=TVIF_CHILDREN | TVIF_STATE | TVIF_TEXT, tvins.item.state=TVIS_BOLD;//|TVIS_EXPANDED ; 
-	tvins.item.stateMask=0xFFFF, tvins.item.cChildren=1;
-	tvins.item.pszText=_T("HKCR");
-	HKCR=TreeView_InsertItem(TreeW,&tvins);
-	tvins.item.pszText=_T("HKCU");
-	HKCU=TreeView_InsertItem(TreeW,&tvins);
-	tvins.item.pszText=_T("HKLM");
-	HKLM=TreeView_InsertItem(TreeW,&tvins);
-	tvins.item.pszText=_T("HKUS");
-	HKUS=TreeView_InsertItem(TreeW,&tvins);
-#ifndef _WIN32_WCE
-	tvins.item.pszText=_T("HKCC");
-	HKCC=TreeView_InsertItem(TreeW,&tvins);
-	tvins.item.pszText=_T("HKDD");//Win95
-	HKCC=TreeView_InsertItem(TreeW,&tvins);
-	tvins.item.pszText=_T("HKPD");//WinNT
-	HKCC=TreeView_InsertItem(TreeW,&tvins);
-#endif
-	//ListView Setup
-	lvcol.mask=LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH;
-	lvcol.fmt=LVCFMT_LEFT;
-	lvcol.iSubItem = 0; lvcol.pszText = _T("Name"); lvcol.cx = xName;
-	if (ListView_InsertColumn(ListW,0,&lvcol)==-1) ErrMsgDlgBox(_T("ListView"));
-	lvcol.iSubItem = 1; lvcol.pszText = _T("Data"); lvcol.cx = xData;
-	if (ListView_InsertColumn(ListW,1,&lvcol)==-1) ErrMsgDlgBox(_T("ListView"));
-	SetFocus(TreeW);
-	break;
-	  
   case WM_CLOSE:
 	//SaveSettings();
     if (RplProgrDlg) { SetFocus(RplProgrDlg); break; }
@@ -895,6 +909,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	case TVN_KEYDOWN:
       wVKey = ((LPNMTVKEYDOWN)lParam)->wVKey;
+      if (wVKey == VK_F2) {
+        SendMessage(hwnd,WM_COMMAND,333,0);
+        return 1;
+      }
       if (wVKey == VK_F5) {
         SendMessage(hwnd,WM_COMMAND,340,0);
 		return 1;
@@ -939,6 +957,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case LVN_KEYDOWN:
       wVKey = ((LPNMLVKEYDOWN)lParam)->wVKey;
+      if (wVKey == VK_F2) {
+        SendMessage(hwnd,WM_COMMAND,322,0);
+        return 1;
+      }
       if (wVKey == VK_F3) {
         DoSearchAndReplaceNext(hwnd);
         return 1;
@@ -1074,14 +1096,6 @@ e201dbl:
     if (is_dragging) {
       ValuesContinueDrag(hwnd, lParam);
     }
-    break;
-
-  case WM_SIZE:
-    SendMessage(SbarW,WM_SIZE,wParam,lParam);
-    dxw=LOWORD(lParam),dyw=HIWORD(lParam);
-    SetWindowPos(TreeW,HWND_TOP,0,CbarHeight,min(dxw,xTree),dyw-SbarHeight-CbarHeight,0);
-    SetWindowPos(ListW,HWND_TOP,xTree+xSplitBar,CbarHeight,dxw-xTree-xSplitBar,dyw-SbarHeight-CbarHeight,0);
-    //if (wParam==SIZE_MINIMIZED) ShowWindow(hwnd,SW_HIDE);
     break;
 
   case WM_CAPTURECHANGED:
