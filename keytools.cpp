@@ -293,13 +293,13 @@ static int CopyKeyLight(HKEY src, HKEY dst, key_copy_cookie *cookie) {
   int n=0,k,ec=1;
   HKEY src1,dst1;
   DWORD cknl,ccnl, tnl,tcl, tmp;
-  BYTE *cknb,*ccnb;
+  TCHAR *cknb,*ccnb;
   FILETIME lwt;
   if (RegQueryInfoKey(src,NULL,NULL,NULL,NULL,&cknl,&ccnl,NULL,0,0,NULL,NULL)!=ERROR_SUCCESS) {
 	//todo: error msg
 	return 0;
   }
-  cknb=(BYTE*)malloc(++cknl); ccnb=(BYTE*)malloc(++ccnl);
+  cknb=(TCHAR*)malloc(++cknl * sizeof(TCHAR)); ccnb=(TCHAR*)malloc(++ccnl * sizeof(TCHAR));
   //Copy values:
   value_iterator i(src);
   for(; !i.end(); i++) if (i.is_ok) {
@@ -311,25 +311,25 @@ static int CopyKeyLight(HKEY src, HKEY dst, key_copy_cookie *cookie) {
   const TCHAR *const dstctrl = cookie->dstctrl;
   if (dstctrl) for(; dstctrl[k] && dstctrl[k] != '\\'; k++);
   n=0; tnl=cknl, tcl=ccnl;
-  while(RegEnumKeyEx(src,n++,(TCHAR*)cknb,&tnl,NULL,(TCHAR*)ccnb,&tcl,&lwt)==ERROR_SUCCESS) {
+  while(RegEnumKeyEx(src,n++,cknb,&tnl,NULL,ccnb,&tcl,&lwt)==ERROR_SUCCESS) {
 	if (ec & 4) break;
     const TCHAR *c;
-	if(k && !_tcsncmp(dstctrl, (TCHAR*)cknb, k) && !cknb[k]) {
+	if(k && !_tcsncmp(dstctrl, cknb, k) && !cknb[k]) {
 	  c = dstctrl + k;
 	  if (*c == '\\') c++;
       if (*c == 0) { tnl = cknl, tcl = ccnl; continue; } //reached dst root!
 	} else c = NULL;
 	src1 = (HKEY)INVALID_HANDLE_VALUE;
-    int srcerr = RegOpenKeyEx(src, (LPCTSTR)cknb, 0, KEY_READ, &src1);
+    int srcerr = RegOpenKeyEx(src, cknb, 0, KEY_READ, &src1);
 	if (!srcerr &&
-		!RegCreateKeyEx(dst,(LPCTSTR)cknb,0,(TCHAR*)ccnb,REG_OPTION_NON_VOLATILE,
+		!RegCreateKeyEx(dst,cknb,0,ccnb,REG_OPTION_NON_VOLATILE,
 		  KEY_WRITE,NULL,&dst1,&tmp)) {
 	  cookie->dstctrl = c;
       ec |= CopyKeyLight(src1, dst1, cookie);
 	  CloseKey_NHC(dst1);
     } else {
       if (srcerr) {
-        cookie->i_kn = (TCHAR*)cknb, cookie->i_ec = ec;
+        cookie->i_kn = cknb, cookie->i_ec = ec;
         if (!cookie->skip_all_err && DialogBoxParam(hInst, _T("ASKSRCCOPYFAIL"), MainWindow, DialogKCE, (LPARAM)cookie) == IDCANCEL)
           ec |= 4;
         if (!cookie->ignore_err) ec |= 2;
@@ -366,7 +366,7 @@ int CopyKey(const TCHAR *src,const TCHAR *dst,const TCHAR *act) {
 	MessageBox(MainWindow,s,_T("Error!"),0);
 	return 0;
   }
-  dk=GetKeyByName((TCHAR*)dst,KEY_WRITE);
+  dk=GetKeyByName(dst,KEY_WRITE);
   if ((HANDLE)dk!=INVALID_HANDLE_VALUE) {
     CloseKey_NHC(dk);
     if (!replace_dstkeyexists_all || !RplProgrDlg) {
@@ -385,7 +385,7 @@ int CopyKey(const TCHAR *src,const TCHAR *dst,const TCHAR *act) {
 	//MessageBox(MainWindow,s,"Error!",0);
 	//return 0;
   }
-  sk=GetKeyByName((TCHAR*)src,KEY_READ);
+  sk=GetKeyByName(src,KEY_READ);
   if ((HANDLE)sk==INVALID_HANDLE_VALUE) {
 	TCHAR *s=(TCHAR*)malloc((_tcslen(src)+30) * sizeof(TCHAR));
 	_stprintf(s,_T("Can't open key %s"),src);
@@ -397,7 +397,7 @@ int CopyKey(const TCHAR *src,const TCHAR *dst,const TCHAR *act) {
   cls=(TCHAR*)malloc(++k * sizeof(*cls));
   *cls=0;
   RegQueryInfoKey(sk,cls,&k,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
-  dk=CreateKeyByName((TCHAR*)dst,cls,KEY_WRITE);
+  dk=CreateKeyByName(dst,cls,KEY_WRITE);
   if ((HANDLE)dk==INVALID_HANDLE_VALUE) {
 	TCHAR *s=(TCHAR*)malloc((_tcslen(src)+30) * sizeof(TCHAR));
 	_stprintf(s,_T("Can't create key %s"),dst);
@@ -454,31 +454,31 @@ int DeleteAllSubkeys(HKEY src) {
 }
 
 static int DeleteKeyLight(HKEY src,const TCHAR *dstctrl) {
-  int k=0,ec=1;
+  DWORD k=0; int ec=1;
   HKEY src1;
   DWORD cknl,ccnl, tnl,tcl, skinx = 0;
-  BYTE *cknb,*ccnb;
+  TCHAR *cknb,*ccnb;
   FILETIME lwt;
   if (RegQueryInfoKey(src,NULL,NULL,NULL,NULL,&cknl,&ccnl,NULL,NULL,NULL,NULL,NULL)!=ERROR_SUCCESS) {
 	//todo: error msg
 	return 0;
   }
-  cknb=(BYTE*)malloc(++cknl * sizeof(TCHAR)); ccnb=(BYTE*)malloc(++ccnl * sizeof(TCHAR));
+  cknb=(TCHAR*)malloc(++cknl * sizeof(TCHAR)); ccnb=(TCHAR*)malloc(++ccnl * sizeof(TCHAR));
   if (dstctrl) for(;dstctrl[k] && dstctrl[k]!='\\';k++);
   tnl=cknl, tcl=ccnl;
-  while(RegEnumKeyEx(src,skinx,(TCHAR*)cknb,&tnl,NULL,(TCHAR*)ccnb,&tcl,&lwt)==ERROR_SUCCESS) {
+  while(RegEnumKeyEx(src,skinx,cknb,&tnl,NULL,ccnb,&tcl,&lwt)==ERROR_SUCCESS) {
 	const TCHAR *c;
-	if(k && !_tcsncmp(dstctrl,(LPCTSTR)cknb,k) && _tcslen((LPCTSTR)cknb)==(DWORD)k) {
+	if(k && !_tcsncmp(dstctrl,cknb,k) && _tcslen(cknb)==k) {
 	  c=dstctrl+k;
 	  if (*c=='\\') c++;
 	  if (*c==0) {tnl=cknl, tcl=ccnl; skinx++; continue;} //reached dst root!
 	} else c=NULL;
     //m.b. skinx=0
-	if (RegOpenKeyEx(src,(LPCTSTR)cknb,0,
+	if (RegOpenKeyEx(src,cknb,0,
 		KEY_CREATE_SUB_KEY | KEY_READ,&src1)==ERROR_SUCCESS) {
 	  ec|=DeleteKeyLight(src1,c);
 	  CloseKey_NHC(src1);
-	  RegDeleteKey(src,(LPCTSTR)cknb);
+	  RegDeleteKey(src,cknb);
 	} else ec|=2;
 	tnl=cknl, tcl=ccnl;
   }
@@ -488,16 +488,16 @@ static int DeleteKeyLight(HKEY src,const TCHAR *dstctrl) {
 BOOL DeleteKeyValues(HKEY src) {
   int ec=1,dbg;
   DWORD vknl, tnl;
-  BYTE *vknb;
+  TCHAR *vknb;
   if (RegQueryInfoKey(src,NULL,NULL,NULL,NULL,NULL,NULL,NULL,&vknl,NULL,NULL,NULL)!=ERROR_SUCCESS) {
 	//todo: error msg
 	return 0;
   }
-  vknb=(BYTE*)malloc(++vknl * sizeof(TCHAR));
+  vknb=(TCHAR*)malloc(++vknl * sizeof(TCHAR));
   //Copy values:
   tnl=vknl;
-  while((dbg=RegEnumValue(src,0,(TCHAR*)vknb,&tnl,NULL,NULL,NULL,NULL))==ERROR_SUCCESS) {
-	if (RegDeleteValue(src,(LPCTSTR)vknb)!=ERROR_SUCCESS) ec|=2;
+  while((dbg=RegEnumValue(src,0,vknb,&tnl,NULL,NULL,NULL,NULL))==ERROR_SUCCESS) {
+	if (RegDeleteValue(src,vknb)!=ERROR_SUCCESS) ec|=2;
 	tnl=vknl;
   }
   free(vknb);
@@ -573,13 +573,15 @@ int MoveKey(const TCHAR *src, const TCHAR *dst) {
   }
   if (!CanDeleteThisKey(src, true)) return 0;
   if (IsSubKey(dst, src)) {
-	TCHAR *c;
-	if (*(c = (TCHAR*)dst + _tcslen(src)) == '\\') c++;
+	const TCHAR *c = dst + _tcslen(src);
+	if (*c == '\\') c++;
 	DeleteKeyLight(sk.hk, c);
 	DeleteKeyValues(sk.hk);
   } else {
 	//Straight removing
 	DeleteKeyLight(sk.hk, NULL);
+	RegCloseKey(sk.hk);
+	sk.hk = (HKEY)INVALID_HANDLE_VALUE;
 	RegDeleteKey(mk.hk, kc+1);
   }
   return rv;
