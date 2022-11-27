@@ -1,25 +1,44 @@
-<comment rem>
+<!DOCTYPE rem|
 for %%x in (system32 syswow64) do if exist "%SystemRoot%\%%x" set SystemLeaf=%%x
 start "%~n0" "%SystemRoot%\%SystemLeaf%\mshta.exe" "%~f0"
 goto :eof
-</comment>
+>
 <head>
 <title>Advanced Registry Editor PII Creation Assistant</title>
 <meta http-equiv="MSThemeCompatible" content="yes">
 <style>
-body
+html
 {
-	margin: 5px 5px 60px 5px;
+	margin: 20px 0px 40px 0px;
 	font: 14px sans-serif;
 	background-color: silver;
+	height: 100%;
+	overflow: hidden;
+}
+body
+{
+	margin: 0;
 	overflow: hidden;
 	border: none;
+	height: 100%;
 }
-fieldset
+#top fieldset
+{
+	border-left-width: 0;
+	border-right-width: 0;
+	border-bottom-width: 0;
+}
+#bottom fieldset
+{
+	border-left-width: 0;
+	border-right-width: 0;
+	border-top-width: 0;
+}
+center
 {
 	height: 100%;
 }
-fieldset iframe
+iframe
 {
 	width: 24.9%;
 	height: 50%;
@@ -27,18 +46,31 @@ fieldset iframe
 }
 div
 {
+	width: 100%;
 	white-space: nowrap;
+	position: absolute;
 }
-div label
+#top
 {
-	padding-right: 10px;
+	top: 3px;
+}
+#bottom
+{
+	margin-top: 5px;
+	bottom: 5px;
+}
+button
+{
+	margin-left: 5px;
+	margin-top: 5px;
 }
 a
 {
 	color: blue;
 	background-color: silver;
 	position: absolute;
-	right: 15px;
+	right: 10px;
+	top: 3px;
 }
 span
 {
@@ -85,10 +117,20 @@ Function DeleteFolder(path)
 	DeleteFolder = Err.Number = 0
 End Function
 
+Function MakeShellLink(path)
+	MakeShellLink = Len(path) & "#" & path
+End Function
+
 Sub CreateAddon_OnClick
 	Dim i, frame, line, path, file
 	CreateFolder(AddOnFolder)
-	If CreateFolder(AddOnFolder & "\" & AddOnName) Then DeleteAddon.disabled = False
+	If CreateFolder(AddOnFolder & "\" & AddOnName) Then
+		DeleteAddon.disabled = False
+		path = AddOnFolder & "\" & AddOnName & "\Common"
+		If CreateFolder(path) Then
+			fso.CreateTextFile(path & "\regedt33.lnk").Write MakeShellLink("""\flash\AddOn\regedt33.exe""")
+		End If
+	End If
 	For i = 0 To document.frames.length - 1
 		Set frame = document.frames(i)
 		path = AddOnFolder & "\" & AddOnName & "\" & frame.frameElement.name
@@ -105,6 +147,8 @@ Sub CreateAddon_OnClick
 				file.WriteLine FormatNumber(Right(frame.frameElement.name, 3) / 100, 2) & " " & Right(line, 22)
 			ElseIf InStr(1, line, "; file ", vbTextCompare) = 1 Then
 				file.WriteLine "\" & frame.frameElement.name & "\regedt33.exe > \flash\AddOn\ #NO"
+				If AddDesktopLink.checked Then file.WriteLine "\Common\regedt33.lnk > \Windows\Desktop\ #NO"
+				If AddToStartMenu.checked Then file.WriteLine "\Common\regedt33.lnk > \Windows\Programs\ #NO"
 			' ElseIf InStr(1, line, "; registry ", vbTextCompare) = 1 Then
 			' ElseIf InStr(1, line, "; uninstall ", vbTextCompare) = 1 Then
 			ElseIf Len(line) <> 0 And InStr(line, "\") = 0 And InStr(line, ";") = 0 Then
@@ -140,10 +184,12 @@ End Sub
 </script>
 </head>
 <body>
-<a href="#" unselectable="on" onclick="vbs:wsh.Run(Me.innerText)">https://github.com/datadiode/regedt33</a>
-<span disabled id="Version"></span>
+<div id='top'>
 <fieldset>
 <legend>Templates</legend>
+</fieldset>
+</div>
+<center>
 <iframe name="arm_800" title="WEC2013 Beaglebone SDK" src="about:KTP_Mob_4.pii"></iframe>
 <iframe name="arm_800" title="WEC2013 Beaglebone SDK" src="about:KTP_Mobile_7_9.pii"></iframe>
 <iframe name="arm_800" title="WEC2013 Beaglebone SDK" src="about:TP_10F_Mobile.pii"></iframe>
@@ -152,12 +198,19 @@ End Sub
 <iframe name="x86_600" title="Beckhoff_HMI_600 (x86)" src="about:CP_7_15_Out.pii"></iframe>
 <iframe name="x86_600" title="Beckhoff_HMI_600 (x86)" src="about:CP_15.pii"></iframe>
 <iframe name="x86_800" title="Compact2013_SDK_86Duino_80B" src="about:CP_GX_800.pii"></iframe>
-</fieldset>
-<div>
+</center>
+<div id='bottom'>
+<fieldset></fieldset>
 <button id="CreateAddon">Create ProSave Addon</button>
 <button id="DeleteAddon">Delete ProSave Addon</button>
 <label for="Intrusive" title="This option allows an install right beside ProSave's stock addons (requires admin rights)">
 <input id="Intrusive" type="checkbox">Intrusive</label>
-<button id="ShowLicense">&#9878; Show License</button>
+<label for="AddDesktopLink" title="This option creates a desktop link to the application">
+<input id="AddDesktopLink" type="checkbox" checked>on desktop</label>
+<label for="AddToStartMenu" title="This option adds the application to the start menu">
+<input id="AddToStartMenu" type="checkbox" checked>in start menu</label>
+<button id="ShowLicense" title="GPL-2.0-or-later">&#9878; Show License</button>
 </div>
+<a href="#nowhere" unselectable="on" onclick="vbs:wsh.Run(Me.innerText)">https://github.com/datadiode/regedt33</a>
+<span disabled id="Version"></span>
 </body>
