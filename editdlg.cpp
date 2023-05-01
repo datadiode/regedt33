@@ -84,8 +84,8 @@ INT_PTR CALLBACK EditMString (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
 	SetDlgItemText(hwnd,IDC_EDITSTR,params->data.c);
 	for(n=numstr=0,c=params->data.c;n<(int)params->data.l /*&& c[n]*/;) {
 	  k=_tcslen(c+n);
-	  if (k==0 && n==(int)params->data.l-1) break;
-	  SendDlgItemMessage(hwnd,IDC_SLIST,LB_ADDSTRING,0,(LPARAM)c+n);
+	  if (n==(int)params->data.l/sizeof(TCHAR)-1) break;
+	  SendDlgItemMessage(hwnd,IDC_SLIST,LB_ADDSTRING,0,(LPARAM)(c+n));
 	  numstr++;
 	  n+=k+1;
 	}
@@ -111,14 +111,14 @@ INT_PTR CALLBACK EditMString (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
 		m=SendDlgItemMessage(hwnd,IDC_SLIST,LB_GETTEXTLEN,n,0);
 		if (m!=LB_ERR) k+=m+1; else k+=30;
 	  }
-      c = params->newdata.resize(k + 4);
+      c = params->newdata.resize(k*sizeof(TCHAR));
 	  for(n=m=0;n<l;n++) {
 		c[m]=0;
 		SendDlgItemMessage(hwnd,IDC_SLIST,LB_GETTEXT,n,(LPARAM)(c+m));
 		m+=_tcslen(c+m)+1;
 	  }
 	  c[m++]=0;
-	  params->newdata.l = m;
+	  params->newdata.l = m*sizeof(TCHAR);
 	  if (LOWORD(wParam)==IDOK) EndDialog(hwnd,1);
 	  break;
 	case IDCANCEL: EndDialog(hwnd,0); break; 
