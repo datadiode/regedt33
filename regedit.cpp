@@ -50,6 +50,9 @@ void GetLVItemText(HWND ListW, int i, TCHAR *&name, DWORD &ns);
 
 int RefreshSubtree(HTREEITEM hfc, const TCHAR *kname, HKEY hk);
 int ConnectRegistry(achar &comp, HKEY node, const TCHAR *node_name5, TVINSERTSTRUCT &tvins);
+
+BOOL ProcessCmdLine(int argc, wchar_t *argv[]);
+
 TCHAR const szClsName[] = _T("regedit33");
 TCHAR const szWndName[] = _T("Advanced Registry Editor");
 
@@ -118,20 +121,25 @@ struct disconnect_remote_dialog_data {
 
 static HTREEITEM HKCR,HKCU,HKLM,HKUS,HKCC,HKDD,HKPD;
 
-int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
+extern "C" int _tmain(int argc, TCHAR *argv[]) {
+#ifdef _UNICODE
+  if (ProcessCmdLine(argc, argv))
+    return 0;
+#endif
   HWND hwnd;
   MSG msg;
   WNDCLASS wcl;
-  hInst=hTI;
+
+  hInst = GetModuleHandleW(NULL);
 
   if (FindWindow(szClsName,NULL)) {MessageBeep(MB_OK);return 0;}//?
   InitCommonControls();
 
   if (!GetClassInfo(NULL, WC_DIALOG, &wcl)) return 0;
-  wcl.hInstance = hTI;
+  wcl.hInstance = hInst;
   wcl.lpszClassName = szClsName;
   wcl.lpfnWndProc = WindowProc;
-  wcl.hIcon = LoadIcon(hTI,_T("RegEdit"));
+  wcl.hIcon = LoadIcon(hInst, _T("RegEdit"));
   wcl.hCursor = LoadCursor(NULL, IDC_SIZEWE);
 #ifndef _WIN32_WCE
   wcl.lpszMenuName = _T("MainMenu");
@@ -149,9 +157,9 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
   wcl.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
   if (!RegisterClass(&wcl)) return 0;
 
-  imt=ImageList_LoadBitmap(hTI,MAKEINTRESOURCE(IDB_TYPES),16,0,CLR_NONE);
-  img_up=LoadBitmap(hTI,_T("ARROWUP"));
-  img_down=LoadBitmap(hTI,_T("ARROWDOWN"));
+  imt = ImageList_LoadBitmap(hInst, MAKEINTRESOURCE(IDB_TYPES), 16, 0, CLR_NONE);
+  img_up = LoadBitmap(hInst, _T("ARROWUP"));
+  img_down = LoadBitmap(hInst, _T("ARROWDOWN"));
   static LOGFONT const lf = {
     16, 8, 0, 0, FW_LIGHT, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
     CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH | FF_DONTCARE, _T("Courier New")
@@ -170,10 +178,10 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
 
   //Beep(300,10);
   LoadSettings();
-  hwnd = CreateDialog(hTI, szClsName, NULL, DialogProc);
+  hwnd = CreateDialog(hInst, szClsName, NULL, DialogProc);
   MainWindow=hwnd;
 
-  ShowWindow(hwnd,nWinMode);
+  ShowWindow(hwnd, SW_SHOWNORMAL);
   UpdateWindow(hwnd);
 
 #ifdef _WIN32_WCE
@@ -215,6 +223,14 @@ int WINAPI _tWinMain(HINSTANCE hTI, HINSTANCE, LPTSTR lpszargs, int nWinMode) {
 
   return 0;
 }
+
+#ifdef _WIN32_WCE
+#pragma comment(linker, "/ENTRY:mainWCRTStartup")
+#else
+int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int) {
+  return _tmain(__argc, __targv);
+}
+#endif
 
 INT_PTR CALLBACK DialogProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   LVCOLUMN lvcol;

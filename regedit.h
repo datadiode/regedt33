@@ -23,6 +23,12 @@ struct DllImport {
   f operator*() const { return reinterpret_cast<f>(p); }
 };
 
+// Get pointer beyond rightmost backslash, or to front if none exists
+template<typename string_type>
+inline string_type FindLastComponent(string_type path) {
+  return std::max<string_type>(path, _tcsrchr(path, _T('\\')) + 1);
+}
+
 /// Iterator for values of a registry key
 struct value_iterator {
   bool is_end, is_err, is_ok;
