@@ -51,7 +51,7 @@ static WCHAR* GetWideString(const char* strA)
         WCHAR* strW;
         int len = MultiByteToWideChar(CP_ACP, 0, strA, -1, NULL, 0);
 
-		strW = (WCHAR*)malloc(len * sizeof(WCHAR));
+        strW = (WCHAR*)malloc(len * sizeof(WCHAR));
         MultiByteToWideChar(CP_ACP, 0, strA, -1, strW, len);
         return strW;
     }
@@ -106,7 +106,7 @@ static char* GetMultiByteStringN(const WCHAR* strW, int chars, DWORD* len)
         char* strA;
         *len = WideCharToMultiByte(CP_ACP, 0, strW, chars, NULL, 0, NULL, NULL);
 
-		strA = (char*)malloc(*len);
+        strA = (char*)malloc(*len);
         WideCharToMultiByte(CP_ACP, 0, strW, chars, strA, *len, NULL, NULL);
         return strA;
     }

@@ -125,7 +125,7 @@ Sub CreateAddon_OnClick
 	Dim i, frame, line, path, file
 	CreateFolder(AddOnFolder)
 	If CreateFolder(AddOnFolder & "\" & AddOnName) Then
-		DeleteAddon.disabled = False
+		Intrusive_OnClick
 		path = AddOnFolder & "\" & AddOnName & "\Common"
 		If CreateFolder(path) Then
 			fso.CreateTextFile(path & "\regedt33.lnk").Write MakeShellLink("""\flash\AddOn\regedt33.exe""")
@@ -159,11 +159,12 @@ Sub CreateAddon_OnClick
 End Sub
 
 Sub DeleteAddon_OnClick
-	If DeleteFolder(AddOnFolder & "\" & AddOnName) Then DeleteAddon.disabled = True
+	If DeleteFolder(AddOnFolder & "\" & AddOnName) Then Intrusive_OnClick
 End Sub
 
 Sub Intrusive_OnClick
-	DeleteAddon.disabled = Not fso.FolderExists(AddOnFolder & "\" & AddOnName)
+	CreateAddon.disabled = fso.FolderExists(AddOnFolder & "\" & AddOnName)
+	DeleteAddon.disabled = Not CreateAddon.disabled
 End Sub
 
 Sub ShowLicense_OnClick
@@ -178,7 +179,7 @@ Sub Window_OnLoad
 	Next
 	Intrusive.disabled = Not IsAdmin
 	Intrusive.checked = Not Intrusive.disabled
-	DeleteAddon.disabled = Not fso.FolderExists(AddOnFolder & "\" & AddOnName)
+	Intrusive_OnClick
 	Version.innerText = fso.GetFileVersion(home & "\Compact2013_SDK_86Duino_80B\ReleaseU\regedt33.exe")
 End Sub
 </script>
