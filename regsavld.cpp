@@ -101,8 +101,7 @@ INT_PTR CALLBACK DialogLDH(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
         dd->fname.GetDlgItemText(hwnd, IDC_E_FILENAME);
         dd->subkey_name.GetDlgItemText(hwnd, IDC_E_SUBKEYNAME);
         if (!dd->subkey_name.size()) {
-          TCHAR *c = _tcsrchr(dd->fname.c, '\\'); if (!c) c = dd->fname.c; else c++;
-          SetDlgItemText(hwnd, IDC_E_SUBKEYNAME, c);
+          SetDlgItemText(hwnd, IDC_E_SUBKEYNAME, FindLastComponent(dd->fname.c));
           return 1;
         }
         EndDialog(hwnd,1); break;
@@ -156,9 +155,8 @@ INT_PTR CALLBACK DialogSVK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
       case IDOK: 
         dd->fname.GetDlgItemText(hwnd, IDC_E_FILENAME);
         dd->key_name.GetDlgItemText(hwnd, IDC_E_KEYNAME);
-        if (!dd->key_name.size()) {
-          TCHAR *c = _tcsrchr(dd->key_name.c, '\\'); if (!c) c = dd->key_name.c; else c++;
-          SetDlgItemText(hwnd, IDC_E_FILENAME, c);
+        if (!dd->fname.size()) {
+          SetDlgItemText(hwnd, IDC_E_FILENAME, FindLastComponent(dd->key_name.c));
           return 1;
         }
         EndDialog(hwnd,1); break;
@@ -221,9 +219,8 @@ INT_PTR CALLBACK DialogLDK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
         dd->nolazy  = SendDlgItemMessage(hwnd, IDC_CHK_NOLAZY, BM_GETCHECK, 0, 0) != 0;
         dd->refresh = SendDlgItemMessage(hwnd, IDC_CHK_REFRESH, BM_GETCHECK, 0, 0) != 0;
         dd->volatil = SendDlgItemMessage(hwnd, IDC_CHK_HIVEVOL, BM_GETCHECK, 0, 0) != 0;
-        if (!dd->key_name.size()) {
-          TCHAR *c = _tcsrchr(dd->key_name.c, '\\'); if (!c) c = dd->key_name.c; else c++;
-          SetDlgItemText(hwnd, IDC_E_FILENAME, c);
+        if (!dd->fname.size()) {
+          SetDlgItemText(hwnd, IDC_E_FILENAME, FindLastComponent(dd->key_name.c));
           return 1;
         }
         EndDialog(hwnd,1); break;
@@ -281,9 +278,8 @@ INT_PTR CALLBACK DialogRplK(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
         dd->fname_new.GetDlgItemText(hwnd, IDC_E_FILENAME);
         dd->fname_old.GetDlgItemText(hwnd, IDC_E_FILENAME2);
         dd->key_name.GetDlgItemText(hwnd, IDC_E_KEYNAME);
-        if (!dd->key_name.size()) {
-          TCHAR *c = _tcsrchr(dd->key_name.c, '\\'); if (!c) c = dd->key_name.c; else c++;
-          SetDlgItemText(hwnd, IDC_E_FILENAME, c);
+        if (!dd->fname_new.size()) {
+          SetDlgItemText(hwnd, IDC_E_FILENAME, FindLastComponent(dd->key_name.c));
           return 1;
         }
         EndDialog(hwnd,1); break;
