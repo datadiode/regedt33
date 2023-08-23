@@ -75,6 +75,7 @@ struct HexEditorState {
 	numlines = he_defnumlines; numcolumns = he_defnumcolumns;
 	dataptr = 0;
 	datalen = 0;
+	undo_disabled = true; // has issues, therefore disable
   }
   ~HexEditorState() {
     free(dataptr);
@@ -597,10 +598,10 @@ LRESULT CALLBACK MyHexEditProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		(TCHAR)((LPMSG)lParam)->wParam==9 &&
 		hs->cursorinpos==1) {
 	  hs->cursorinpos=0;
-	  return DLGC_WANTARROWS | DLGC_WANTCHARS;
+	  return DLGC_WANTARROWS | DLGC_WANTCHARS | DLGC_HASSETSEL;
 	}
-	if (hs->cursorinpos!=1) return DLGC_WANTARROWS | DLGC_WANTTAB | DLGC_WANTCHARS;
-	else return DLGC_WANTARROWS | DLGC_WANTCHARS;
+	if (hs->cursorinpos!=1) return DLGC_WANTARROWS | DLGC_WANTTAB | DLGC_WANTCHARS | DLGC_HASSETSEL;
+	else return DLGC_WANTARROWS | DLGC_WANTCHARS | DLGC_HASSETSEL;
 
   case WM_SETFOCUS:
 	CreateCaret(hwnd,NULL,0,12-1);

@@ -365,7 +365,7 @@ INT_PTR CALLBACK EditBinary (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
 	case IDOK: 
 	  params->newdata.l = SendDlgItemMessage(hwnd,IDC_HEXEDIT,WM_USER+1,0,0);
 	  params->newdata.resize();
-      params->newdata.c[params->newdata.l] = 0;
+      params->newdata.c[params->newdata.l / sizeof(TCHAR)] = 0;
 	  SendDlgItemMessage(hwnd,IDC_HEXEDIT,WM_USER+2,(WPARAM)params->newdata.c,params->newdata.s);
 	  if (LOWORD(wParam)==IDOK) EndDialog(hwnd,1);
 	  break;

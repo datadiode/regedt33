@@ -252,7 +252,7 @@ CAPTION "About Advanced Regedit"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,68,100,50,14
-    CTEXT           "© 2003-2022 by Alexander Melkov et al.",IDC_STATIC,32,16,137,10
+    CTEXT           "© 2003-2023 by Alexander Melkov et al.",IDC_STATIC,32,16,137,10
     CTEXT           "Distributed under GNU GPL",IDC_STATIC,38,30,106,10
     CONTROL         "http://melkov.narod.ru/misc/tools/regedt33",110,"Button",BS_OWNERDRAW|WS_TABSTOP,13,55,158,12
     CONTROL         "https://github.com/datadiode/regedt33",111,"Button",BS_OWNERDRAW|WS_TABSTOP,13,84,158,12

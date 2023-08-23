@@ -121,6 +121,16 @@ struct disconnect_remote_dialog_data {
 
 static HTREEITEM HKCR,HKCU,HKLM,HKUS,HKCC,HKDD,HKPD;
 
+#ifdef _WIN32_WCE
+// GetModuleHandle(NULL) on Windows CE returns a handle which doesn't seem to
+// work for loading resources, so substitute it with a LoadLibraryEx().
+static HMODULE GetModuleHandle(int) {
+  TCHAR path[MAX_PATH];
+  GetModuleFileName(NULL, path, _countof(path));
+  return LoadLibraryEx(path, NULL, LOAD_LIBRARY_AS_DATAFILE);
+}
+#endif
+
 extern "C" int _tmain(int argc, TCHAR *argv[]) {
 #ifdef _UNICODE
   if (ProcessCmdLine(argc, argv))
@@ -130,7 +140,7 @@ extern "C" int _tmain(int argc, TCHAR *argv[]) {
   MSG msg;
   WNDCLASS wcl;
 
-  hInst = GetModuleHandleW(NULL);
+  hInst = GetModuleHandle(NULL);
 
   if (FindWindow(szClsName,NULL)) {MessageBeep(MB_OK);return 0;}//?
   InitCommonControls();
@@ -734,7 +744,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		}
 		SetFocus(ListW);
 		RegCloseKey(hk);
-		vdp=(TCHAR*)malloc(max<int>(vkdl*3,32));
+		vdp=(TCHAR*)malloc(max<int>(vkdl*3,32) * sizeof(TCHAR));
 		item.iItem=i, item.mask=LVIF_IMAGE, item.iSubItem=0;
 		item.stateMask=0, item.iImage=ValueTypeIcon(type);
 		ListView_SetItem(ListW,&item);
@@ -1039,7 +1049,7 @@ e201dbl:
         if (dp.EditValue(hwnd)) {
           break;
         }
-        fchar vdp(malloc(max((int)dp.newdata.l * 3, 32)));
+        fchar vdp(malloc(max((int)dp.newdata.l * 3, 32) * sizeof(TCHAR)));
 		
         LVITEM item;
         item.iItem=i, item.stateMask=0;
