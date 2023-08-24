@@ -54,6 +54,8 @@ struct HexEditorState {
   DWORD cursorat;
   bool cursattext;
   BYTE cursorinpos;
+  bool decimalflag;
+  BYTE decimalbyte;
   DWORD fvline; //first visible line;
   DWORD numlines; //number of lines;
   DWORD numcolumns;
@@ -101,6 +103,7 @@ struct HexEditorState {
   void Paint();
   void onChar(WPARAM wParam);
   void onKeyDown(WPARAM wParam);
+  void onKeyUp(WPARAM wParam);
   void EditMenu(LPARAM lParam);
   void CutOrCopy(bool cut);
   void Paste();
@@ -378,6 +381,18 @@ void HexEditorState::onKeyDown(WPARAM wParam) {
   DWORD d = datalen, e, at = cursorat;
   bool shift_down = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
   bool ctrl_down = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+
+  if (!ctrl_down || cursorinpos != 0) {
+    decimalflag = false;
+  } else if (wParam >= '0' && wParam <= '9' || wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) {
+    if (!decimalflag) {
+      decimalflag = true;
+      decimalbyte = 0;
+    }
+    decimalbyte *= 10;
+    decimalbyte += static_cast<BYTE>(wParam & 0xF);
+  }
+
   bool need_at = true;
   if ((e=cursorinpos)==2) cursorinpos=0;
   switch((TCHAR)wParam) {
@@ -529,6 +544,17 @@ void HexEditorState::onChar(WPARAM wParam) {
   }
 }
 
+void HexEditorState::onKeyUp(WPARAM wParam) {
+  if (wParam == VK_CONTROL && decimalflag) {
+    if (isblockselected) he_DelSel();
+    he_InsByte(decimalbyte);
+    cursorat++;
+    he_onchange(EN_CHANGE);
+    decimalflag = false;
+    InvalidateRect(hwnd, NULL, 1);
+  }
+}
+
 void HexEditorState::EditMenu(LPARAM lParam) {
   HMENU pum = CreatePopupMenu();
   DWORD mp = GetMessagePos();
@@ -583,6 +609,9 @@ LRESULT CALLBACK MyHexEditProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
   case WM_KEYDOWN:
     hs->onKeyDown(wParam);
 	break;
+  case WM_KEYUP:
+    hs->onKeyUp(wParam);
+    break;
 
   case WM_CREATE:
 	hs = new HexEditorState(hwnd);
