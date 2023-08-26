@@ -335,13 +335,38 @@ INT_PTR CALLBACK EditDWORD (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
   return 0;
 }
 
-INT_PTR CALLBACK EditBinary (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
+static WNDPROC DefPhoneKeyboardProc = NULL;
+static LRESULT CALLBACK PhoneKeyboardProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  return CallWindowProc(DefPhoneKeyboardProc, hwnd, msg == WM_LBUTTONDBLCLK ? WM_LBUTTONDOWN : msg, wParam, lParam);
+}
+
+INT_PTR CALLBACK EditBinary(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   val_ed_dialog_data *params;
   TCHAR s[64];
+  RECT rect;
+  TCITEM item;
+  UINT value;
+  BOOL valid;
   switch (msg) {
+  case WM_ACTIVATE:
+    if (HWND const hwndPhoneKeyboard = GetDlgItem(hwnd, IDC_PHONEKEYBOARD)) {
+      if (wParam)
+        DefPhoneKeyboardProc = (WNDPROC)SetWindowLongPtr(hwndPhoneKeyboard, GWLP_WNDPROC, (LONG_PTR)PhoneKeyboardProc);
+      else
+        SetWindowLongPtr(hwndPhoneKeyboard, GWLP_WNDPROC, (LONG_PTR)DefPhoneKeyboardProc);
+    }
+    break;
   case WM_INITDIALOG: 
     SetWindowLongPtr(hwnd, DWLP_USER, lParam);
 	params = (val_ed_dialog_data*)lParam;
+    if (HWND const hwndPhoneKeyboard = GetDlgItem(hwnd, IDC_PHONEKEYBOARD)) {
+      GetClientRect(hwndPhoneKeyboard, &rect);
+      TabCtrl_SetItemSize(hwndPhoneKeyboard, rect.bottom, rect.bottom);
+      item.mask = TCIF_TEXT;
+      item.pszText = _T("*");
+      TabCtrl_InsertItem(hwndPhoneKeyboard, 0, &item);
+      TabCtrl_SetCurSel(hwndPhoneKeyboard, -1);
+    }
 	if (params->readonly) {
 	  SendDlgItemMessage(hwnd,IDC_HEXEDIT,EM_SETREADONLY,1,0);
 	  EnableWindow(GetDlgItem(hwnd,IDOK),0);
@@ -379,6 +404,91 @@ INT_PTR CALLBACK EditBinary (HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) {
 	  break;
 	}
 	return 1;
+  case WM_NOTIFY:
+    switch (LPNMHDR(lParam)->code) {
+    case TCN_SELCHANGE:
+      switch (UINT const hitcode =
+        TabCtrl_GetCurSel(LPNMHDR(lParam)->hwndFrom) |
+        TabCtrl_GetItemCount(LPNMHDR(lParam)->hwndFrom) << 4) {
+      case 0x10: //symbol *
+        SetWindowText(LPNMHDR(lParam)->hwndFrom, NULL);
+        GetWindowRect(LPNMHDR(lParam)->hwndFrom, &rect);
+        MapWindowPoints(NULL, hwnd, LPPOINT(&rect), 2);
+        SetWindowPos(LPNMHDR(lParam)->hwndFrom, NULL,
+          rect.left, rect.top - (rect.bottom - rect.top + 3) * 3,
+          (rect.bottom - rect.top + 3) * 3,
+          (rect.bottom - rect.top + 3) * 4,
+          SWP_NOZORDER);
+        item.mask = TCIF_TEXT;
+        item.pszText = _T("#");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 1, &item);
+        item.pszText = _T("0");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 1, &item);
+        item.pszText = _T("9");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("8");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("7");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("6");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("5");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("4");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("3");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("2");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        item.pszText = _T("1");
+        TabCtrl_InsertItem(LPNMHDR(lParam)->hwndFrom, 0, &item);
+        break;
+      case 0xCB: //symbol #
+        value = GetDlgItemInt(hwnd, LPNMHDR(lParam)->idFrom, &valid, FALSE);
+        if (valid)
+          SendDlgItemMessage(hwnd, IDC_HEXEDIT, WM_USER + 4, value, 0);
+        // fall through
+      case 0xC9: //symbol *
+        GetWindowRect(LPNMHDR(lParam)->hwndFrom, &rect);
+        MapWindowPoints(NULL, hwnd, LPPOINT(&rect), 2);
+        SetWindowPos(LPNMHDR(lParam)->hwndFrom, NULL,
+          rect.left, rect.right - rect.left + rect.top,
+          (rect.bottom - rect.top) - (rect.right - rect.left) - 3,
+          (rect.bottom - rect.top) - (rect.right - rect.left) - 3,
+          SWP_NOZORDER);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 0);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 1);
+        TabCtrl_DeleteItem(LPNMHDR(lParam)->hwndFrom, 1);
+        break;
+      case 0xC0: //digit 1
+      case 0xC1: //digit 2
+      case 0xC2: //digit 3
+      case 0xC3: //digit 4
+      case 0xC4: //digit 5
+      case 0xC5: //digit 6
+      case 0xC6: //digit 7
+      case 0xC7: //digit 8
+      case 0xC8: //digit 9
+      case 0xCA: //digit 0
+        value = GetDlgItemInt(hwnd, LPNMHDR(lParam)->idFrom, &valid, FALSE);
+        value *= 10;
+        if (hitcode != 0xCA)
+          value += hitcode - 0xBF;
+        SetDlgItemInt(hwnd, LPNMHDR(lParam)->idFrom, value, FALSE);
+        break;
+      }
+      TabCtrl_SetCurSel(LPNMHDR(lParam)->hwndFrom, -1);
+      break;
+    }
+    return 1;
   }
   return 0;
 }

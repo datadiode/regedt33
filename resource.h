@@ -6,6 +6,7 @@
 #define IDB_ARROWUP                     108
 #define IDB_ARROWDOWN                   109
 #define IDC_APPLY                       1000
+#define IDC_PHONEKEYBOARD               1001
 #define IDC_EDITSTR                     1002
 #define IDC_HEXNUM                      1002
 #define IDC_EDIT_SERACH                 1002

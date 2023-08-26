@@ -729,6 +729,12 @@ LRESULT CALLBACK MyHexEditProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
   case WM_USER+3://Ensure that caret (text cursor) is visible
 	break;
 
+  case WM_USER+4://Enter the byte given in wParam
+    hs->decimalflag = true;
+    hs->decimalbyte = static_cast<BYTE>(wParam);
+    hs->onKeyUp(VK_CONTROL);
+    break;
+
   case EM_SETREADONLY:
     hs->readonly = wParam != 0;
     break;
