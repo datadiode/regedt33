@@ -9,3 +9,6 @@ Prepare for post-Putin era!
 The future is bright, but it isn't yours unless you stand up against war!
 
 https://filmfreeway.com/BrightRussianfuture
+
+### If you wonder where Windows CE keeps its `hosts` file ...
+![regedt33_enter_decimal_bytes](https://github.com/datadiode/srellcom/assets/10423465/9d233ecd-d028-4d5c-84ad-d1991d58f0f4)
