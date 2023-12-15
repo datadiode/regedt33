@@ -24,9 +24,13 @@ clone_script:
 - msiexec /i Beckhoff_HMI_600_V2.2_SDK.msi /quiet /norestart /log msilog.txt & exit 0
 
 build_script:
+- build_script.bat "Win32" Debug
 - build_script.bat "Win32" DebugU
+- build_script.bat "Win32" Release
 - build_script.bat "Win32" ReleaseU
+- build_script.bat "x64" Debug
 - build_script.bat "x64" DebugU
+- build_script.bat "x64" Release
 - build_script.bat "x64" ReleaseU
 - build_script.bat "Compact2013_SDK_86Duino_80B" DebugU
 - build_script.bat "Compact2013_SDK_86Duino_80B" ReleaseU
@@ -44,12 +48,20 @@ after_build:
 - cmd: FOR /F %%A IN (GIT-VS-VERSION-FILE) DO SET PRODUCT_VERSION=%%A
 
 artifacts:
+- path: Win32\Debug
+  name: regedt33_$(PRODUCT_VERSION)-Win32-Debug
 - path: Win32\DebugU
   name: regedt33_$(PRODUCT_VERSION)-Win32-DebugU
+- path: Win32\Release
+  name: regedt33_$(PRODUCT_VERSION)-Win32-Release
 - path: Win32\ReleaseU
   name: regedt33_$(PRODUCT_VERSION)-Win32-ReleaseU
+- path: x64\Debug
+  name: regedt33_$(PRODUCT_VERSION)-x64-Debug
 - path: x64\DebugU
   name: regedt33_$(PRODUCT_VERSION)-x64-DebugU
+- path: x64\Release
+  name: regedt33_$(PRODUCT_VERSION)-x64-Release
 - path: x64\ReleaseU
   name: regedt33_$(PRODUCT_VERSION)-x64-ReleaseU
 - path: Compact2013_SDK_86Duino_80B\DebugU
