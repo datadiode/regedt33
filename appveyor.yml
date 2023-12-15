@@ -1,23 +1,70 @@
 version: 1.0.{build}
-image: Visual Studio 2015
+image: Visual Studio 2017
 
-configuration:
-- Debug
-- DebugU
-- Release
-- ReleaseU
+clone_script:
+- git clone -q --recursive --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
+- git checkout -qf %APPVEYOR_REPO_COMMIT%
+- C:/msys64/usr/bin/wget.exe --max-redirect=7 -nv https://sourceforge.net/projects/msi2xml/files/msi2xml/2.2.1/msi2xml-2.2.1.957-bin.zip/download -O msi2xml-bin.zip
+- C:/msys64/usr/bin/wget.exe -nv https://download.microsoft.com/download/B/C/4/BC4FA89D-4F7B-4022-A4C1-2B3B6E08D8BE/AppBuilderSetup_VS2012_v50806.zip
+- C:/msys64/usr/bin/wget.exe -nv https://github.com/embedded101/Compact2013.BSP/raw/master/sdk/Compact2013_SDK_86Duino_80B.zip
+- C:/msys64/usr/bin/wget.exe -nv https://github.com/datadiode/supplements/raw/main/WEC2013_Beaglebone_SDK_1_00.msi
+- C:/msys64/usr/bin/wget.exe -nv https://download.microsoft.com/download/8/1/d/81d3f35e-fa03-485b-953b-ff952e402520/VS2008ProEdition90dayTrialENUX1435622.iso
+- C:/msys64/usr/bin/wget.exe -U datadiode -nv https://download.beckhoff.com/download/Software/embPC-Control/CE/Solutions/SDK/Beckhoff_HMI_600_V2.2_SDK.msi
+- 7z.exe x -oVS2008ProEdition VS2008ProEdition90dayTrialENUX1435622.iso
+- 7z.exe x -oAppBuilderSetup AppBuilderSetup_VS2012_v50806.zip
+- 7z.exe x Compact2013_SDK_86Duino_80B.zip
+- 7z.exe x msi2xml-bin.zip
+- msi2xml.exe Beckhoff_HMI_600_V2.2_SDK.msi
+- C:/msys64/usr/bin/sed.exe -i 's/MS.VSIPCC.v80/MS.VSIPCC.v90/g' Beckhoff_HMI_600_V2.2_SDK.xml
+- xml2msi.exe Beckhoff_HMI_600_V2.2_SDK.xml
+- start /wait VS2008ProEdition\setup\setup.exe /q /norestart
+- AppBuilderSetup\VSEmbedded_AppBuilder.exe /Quiet /NoRestart /Log log.txt & exit 0
+- msiexec /i Compact2013_SDK_86Duino_80B.msi /quiet /norestart /log msilog.txt & exit 0
+- msiexec /i WEC2013_Beaglebone_SDK_1_00.msi /quiet /norestart /log msilog.txt & exit 0
+- msiexec /i Beckhoff_HMI_600_V2.2_SDK.msi /quiet /norestart /log msilog.txt & exit 0
 
-platform:
-- Win32
-- x64
+build_script:
+- build_script.bat "Win32" DebugU
+- build_script.bat "Win32" ReleaseU
+- build_script.bat "x64" DebugU
+- build_script.bat "x64" ReleaseU
+- build_script.bat "Compact2013_SDK_86Duino_80B" DebugU
+- build_script.bat "Compact2013_SDK_86Duino_80B" ReleaseU
+- build_script.bat "WEC2013 Beaglebone SDK" DebugU
+- build_script.bat "WEC2013 Beaglebone SDK" ReleaseU
+- build_script.bat "Beckhoff_HMI_600 (x86)" DebugU
+- build_script.bat "Beckhoff_HMI_600 (x86)" ReleaseU
+- build_script.bat "Beckhoff_HMI_600 (ARMV4I)" DebugU
+- build_script.bat "Beckhoff_HMI_600 (ARMV4I)" ReleaseU
 
-build:
-  verbosity: normal
-  project: regedt33.sln
+before_build:
+- cmd: echo.>vld.h
 
 after_build:
-- cmd: FOR /F %%A IN (regedt33\%PLATFORM%\%CONFIGURATION%\GIT-VS-VERSION-FILE) DO SET PRODUCT_VERSION=%%A
+- cmd: FOR /F %%A IN (GIT-VS-VERSION-FILE) DO SET PRODUCT_VERSION=%%A
 
 artifacts:
-- path: $(platform)\$(configuration)
-  name: regedt33_$(PRODUCT_VERSION)-$(platform)-$(configuration)
+- path: Win32\DebugU
+  name: regedt33_$(PRODUCT_VERSION)-Win32-DebugU
+- path: Win32\ReleaseU
+  name: regedt33_$(PRODUCT_VERSION)-Win32-ReleaseU
+- path: x64\DebugU
+  name: regedt33_$(PRODUCT_VERSION)-x64-DebugU
+- path: x64\ReleaseU
+  name: regedt33_$(PRODUCT_VERSION)-x64-ReleaseU
+- path: Compact2013_SDK_86Duino_80B\DebugU
+  name: regedt33_$(PRODUCT_VERSION)-Compact2013_SDK_86Duino_80B-DebugU
+- path: Compact2013_SDK_86Duino_80B\ReleaseU
+  name: regedt33_$(PRODUCT_VERSION)-Compact2013_SDK_86Duino_80B-ReleaseU
+- path: WEC2013 Beaglebone SDK\DebugU
+  name: regedt33_$(PRODUCT_VERSION)-WEC2013 Beaglebone SDK-DebugU
+- path: WEC2013 Beaglebone SDK\ReleaseU
+  name: regedt33_$(PRODUCT_VERSION)-WEC2013 Beaglebone SDK-ReleaseU
+- path: Beckhoff_HMI_600 (x86)\DebugU
+  name: regedt33_$(PRODUCT_VERSION)-Beckhoff_HMI_600 (x86)-DebugU
+- path: Beckhoff_HMI_600 (x86)\ReleaseU
+  name: regedt33_$(PRODUCT_VERSION)-Beckhoff_HMI_600 (x86)-ReleaseU
+- path: Beckhoff_HMI_600 (ARMV4I)\DebugU
+  name: regedt33_$(PRODUCT_VERSION)-Beckhoff_HMI_600 (ARMV4I)-DebugU
+- path: Beckhoff_HMI_600 (ARMV4I)\ReleaseU
+  name: regedt33_$(PRODUCT_VERSION)-Beckhoff_HMI_600 (ARMV4I)-ReleaseU
